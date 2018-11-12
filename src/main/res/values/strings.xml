@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Io-Lego</string>
+
+    <string name="alert_reconnect_title">Connect failed</string>
+    <string name="alert_reconnect_text">Connection to EV3 unvailable</string>
+    <string name="alert_colorChoose_title">Choose color</string>
+
+</resources>
