@@ -22,31 +22,18 @@
             android:layout_weight="0.6"
             android:weightSum="1"
             android:layout_height="0dp">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:layout_marginLeft="3dp"
-                android:layout_weight="0.06"
-                android:drawableEnd="@drawable/bluetooth_connected" />
+
             <TextView
                 android:layout_marginTop="5dp"
                 android:text="IO LEGO"
                 android:textSize="25dp"
                 android:gravity="center"
-
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_width="0dp"
-                android:layout_weight="0.88"
+                android:layout_weight="1"
+                android:drawableLeft="@drawable/bluetooth_connected"
+                android:drawableRight="@drawable/battery_full"
                 />
-
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:layout_weight="0.06"
-                android:drawableEnd="@drawable/battery_full" />
         </LinearLayout>
 
         <RelativeLayout
