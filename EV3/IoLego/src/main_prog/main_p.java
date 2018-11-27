@@ -26,11 +26,6 @@ import main_prog.AllThreads;
 
 public class main_p {
 	
-	private final static int DIM = 5;
-	private final static int SOGLIA_OSTACOLO = 1000;
-	private static Boolean run=true;
-	private Cella[][] campo;
-
 	enum Directions { UP, DOWN, LEFT, RIGHT	}
 	
 	enum Colors {
@@ -48,6 +43,13 @@ public class main_p {
 		}
 	}
 	
+	private final static int DIM = 5;
+	private final static int SOGLIA_OSTACOLO = 1000;
+	private static Boolean run=true;
+	private Cella[][] campo;
+	private MotorMonitor monitor;
+
+
 	public void setInitialPosition(int x, int y){
 		campo[x][y].setPosition();
 	}
@@ -112,7 +114,13 @@ public class main_p {
 	
 	private int crossObstacle(int ix, int iy, Directions dir) { return -1;}
 	
-	private void moveRobot(Directions dir) {}
+	private void moveRobot(Directions dir) {
+		
+		
+		new Thread( new AllThreads.Rotate(this.monitor, dir) ).start();
+	
+	
+	}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -207,17 +215,14 @@ public class main_p {
 		//Configuration
 
 
-		SampleProvider sp = gyroSensor.getAngleAndRateMode();
+		SampleProvider sp = gyroSensor.getAngleMode();
 		int value = 0;
         
-		Thread tA = new Thread(AllThreads.A_avanza);
-		Thread tB = new Thread(AllThreads.B_avanza);
-        
-		tB.start();
-		tA.start();
 		
 		//Control loop
         while(run) {
+        	
+        	
 
         	float [] sample = new float[sp.sampleSize()];
             sp.fetchSample(sample, 0);
