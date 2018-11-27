@@ -14,6 +14,7 @@ import lejos.hardware.motor.Motor;
 import lejos.hardware.motor.NXTRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.hardware.sensor.SensorMode;
 import lejos.remote.nxt.BTConnection;
 import lejos.remote.nxt.BTConnector;
@@ -62,7 +63,6 @@ public class main_p {
 
 			campo[ix][iy].reset();
 			if(tmp > 0){ // DEVO ANDARE DOWN
-				// controllo che la cella dopo sia libera
 				if(checkObstacle(Directions.DOWN)){
 					ix = crossObstacle(ix, iy, Directions.DOWN);
 				}else{
@@ -88,7 +88,6 @@ public class main_p {
 
 			campo[ix][iy].reset();
 			if(tmp > 0){ // DEVO ANDARE A RIGHT
-				// controllo che la cella dopo sia libera
 				if(checkObstacle(Directions.RIGHT)){
 					iy = crossObstacle(ix, iy, Directions.RIGHT);
 				}else{
@@ -100,7 +99,6 @@ public class main_p {
 				if(checkObstacle(Directions.LEFT)){
 					iy= crossObstacle(ix, iy, Directions.LEFT);
 				}else{
-					// sposta i motori A e B SU'
 					moveRobot(Directions.LEFT);
 					iy--;	
 				}
@@ -110,17 +108,16 @@ public class main_p {
 		}
 	}
 	
-	private boolean checkObstacle(Directions dir) {}
+	private boolean checkObstacle(Directions dir) { return false; }
 	
-	private int crossObstacle(int ix, int iy, Directions dir) {}
+	private int crossObstacle(int ix, int iy, Directions dir) { return -1;}
 	
 	private void moveRobot(Directions dir) {}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		LCD.drawString("Dio Cane", 0, 4);
-
-		campo= new Cella[DIM][DIM];
+		
+		Cella[][] campo= new Cella[DIM][DIM];
 		for(int i=0; i<DIM; i++){
 			campo[i]= new Cella[DIM];
 			for(int j=0; j<DIM; j++){
@@ -128,6 +125,8 @@ public class main_p {
 			}
 		}
 
+		/* CONNESSIONE BLUETOOTH */
+/*
 		BTConnection setConn;
 		BTConnector set=new BTConnector();
 		
@@ -135,8 +134,8 @@ public class main_p {
 		
 		InputStream in = setConn.openInputStream();
 		DataInputStream stream = new DataInputStream(in);
-
-
+*/
+		
 		/*
 		Thread t = new Thread(AllThreads.A_close_open);
 		t.start();
@@ -146,63 +145,93 @@ public class main_p {
 		
 		
 
+	/*	PROVA COLORA
+		Port S1=LocalEV3.get().getPort("S1");
+		EV3ColorSensor color= new EV3ColorSensor(S1);
+		SampleProvider colorProvider;
+		colorProvider=color.getRGBMode();
+		float[] colorSample;
 		
-//		Port S1=LocalEV3.get().getPort("S1");
-//		EV3ColorSensor color= new EV3ColorSensor(S1);
-//		SampleProvider colorProvider;
-//		colorProvider=color.getRGBMode();
-//		float[] colorSample;
-//		
-//		colorSample =new float[colorProvider.sampleSize()];
-//		
-//		int r,g,b;
-//		
-//		Delay.msDelay(500);
-//		LCD.clear();
-//		
-//		Thread tA = new Thread(AllThreads.A_avanza);
-//		Thread tB = new Thread(AllThreads.B_avanza);
-//		
-//		tA.start();
-//		tB.start();
-//		LCD.drawString("Battery: " + Battery.getVoltage(), 0, 0);
-//		
-//		while(run) {
-//			colorProvider.fetchSample(colorSample, 0);
-//
-//			LCD.clear(4);
-//			LCD.clear(5);
-//			LCD.clear(6);
-//			r = (int)(colorSample[0]*10*255);
-//			g = (int)(colorSample[1]*10*255);
-//			b = (int)(colorSample[2]*10*255);
-//			
-//			if (r+b+g < Colors.BLACK.getCode()) {
-//				(new Thread(AllThreads.A_stop)).start();
-//				(new Thread(AllThreads.B_stop)).start();
-//				
-//				Delay.msDelay(2000);
-//	
-//				(new Thread(AllThreads.A_avanza)).start();
-//				(new Thread(AllThreads.B_avanza)).start();
-//
-//			}
-//		
-//			LCD.drawString("R  "+ r, 0, 4);
-//			LCD.drawString("G  "+ g, 0, 5);
-//			LCD.drawString("B  "+ b, 0, 6);
-//					
-//		
-//			Delay.msDelay(100);
-//		
-//		}
-//		
-//		
-//		Delay.msDelay(5000);
-//        
+		colorSample =new float[colorProvider.sampleSize()];
+		
+		int r,g,b;
+		
+		Delay.msDelay(500);
+		LCD.clear();
+		
+		Thread tA = new Thread(AllThreads.A_avanza);
+		Thread tB = new Thread(AllThreads.B_avanza);
+		
+		tA.start();
+		tB.start();
+		LCD.drawString("Battery: " + Battery.getVoltage(), 0, 0);
 		
 		while(run) {
+			colorProvider.fetchSample(colorSample, 0);
+
+			LCD.clear(4);
+			LCD.clear(5);
+			LCD.clear(6);
+			r = (int)(colorSample[0]*10*255);
+			g = (int)(colorSample[1]*10*255);
+			b = (int)(colorSample[2]*10*255);
 			
+			if (r+b+g < Colors.BLACK.getCode()) {
+				(new Thread(AllThreads.A_stop)).start();
+				(new Thread(AllThreads.B_stop)).start();
+				
+				Delay.msDelay(2000);
+	
+				(new Thread(AllThreads.A_avanza)).start();
+				(new Thread(AllThreads.B_avanza)).start();
+
+			}
+		
+			LCD.drawString("R  "+ r, 0, 4);
+			LCD.drawString("G  "+ g, 0, 5);
+			LCD.drawString("B  "+ b, 0, 6);
+					
+		
+			Delay.msDelay(100);
+		
+		}
+		
+		
+		Delay.msDelay(5000);
+    */
+	/*GIROSCOPIO*/
+		//Robot Configuration
+		Port S3 = LocalEV3.get().getPort("S3");
+		EV3GyroSensor gyroSensor = new EV3GyroSensor(S3);
+
+		//Configuration
+
+
+		SampleProvider sp = gyroSensor.getAngleAndRateMode();
+		int value = 0;
+        
+		Thread tA = new Thread(AllThreads.A_avanza);
+		Thread tB = new Thread(AllThreads.B_avanza);
+        
+		tB.start();
+		tA.start();
+		
+		//Control loop
+        while(run) {
+
+        	float [] sample = new float[sp.sampleSize()];
+            sp.fetchSample(sample, 0);
+            value = (int)sample[0];
+            
+
+            
+			LCD.drawString("Gyro angle: " + value, 0, 4);
+			Delay.msDelay(500);
+        }
+
+
+	/*	
+		while(run) {
 		
 	        String message = "";
 			char c;
@@ -223,7 +252,7 @@ public class main_p {
 			
 			Delay.msDelay(5000);
 		}
-		
+	*/
 	}			
 
 }
