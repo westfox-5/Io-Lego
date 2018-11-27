@@ -15,11 +15,13 @@ import lejos.hardware.motor.NXTRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3GyroSensor;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorMode;
 import lejos.remote.nxt.BTConnection;
 import lejos.remote.nxt.BTConnector;
 import lejos.remote.nxt.NXTConnection;
 import lejos.robotics.SampleProvider;
+import lejos.robotics.navigation.Move;
 import lejos.utility.Delay;
 
 import main_prog.AllThreads;
@@ -31,7 +33,6 @@ public class main_p {
 	enum Colors {
 		BLACK (35);
 			
-		
 		private final int colorCode;
 		
 		private Colors(int colorCode) {
@@ -46,19 +47,33 @@ public class main_p {
 	private final static int DIM = 5;
 	private final static int SOGLIA_OSTACOLO = 1000;
 	private static Boolean run=true;
-	private Cella[][] campo;
-	private MotorMonitor monitor;
+	private static Cella[][] campo;
+	private static RotationMonitor monitor;
+	
+	private static Port S4;
+	private static EV3UltrasonicSensor uSensor;
+	private static SampleProvider distance;
+	private static int defaultDistance;
+	private static char letto;
+	private static int x;
+	private static int y;
+	
+	public main_p() {
+		defaultDistance=-1;
+		x=0;
+		y=0;
+	}
+	
 
-
-	public void setInitialPosition(int x, int y){
+	public static void setInitialPosition(int x, int y){
 		campo[x][y].setPosition();
 	}
 
-	public void setColors(int x, int y, Colors colore){
+	public static void setColors(int x, int y, Colors colore){
 		campo[x][y].setColor(colore);
 	}
 
-	public void move(int ix, int iy, int fx, int fy){
+	public static void move(int ix, int iy, int fx, int fy){
 		int tmp= fx-ix;
 		
 		while(tmp != 0){
@@ -110,29 +125,96 @@ public class main_p {
 		}
 	}
 	
-	private boolean checkObstacle(Directions dir) { return false; }
-	
-	private int crossObstacle(int ix, int iy, Directions dir) { return -1;}
-	
-	private void moveRobot(Directions dir) {
+	private static boolean checkObstacle(Directions dir) {
 		
+		distance=uSensor.getDistanceMode();
 		
-		new Thread( new AllThreads.Rotate(this.monitor, dir) ).start();
+		float [] sample = new float[distance.sampleSize()];
+		distance.fetchSample(sample, 0);
+		
+		if(sample[0]!=defaultDistance) {
+			return true;
+		}
+			
+		return false; }
 	
+	private static int crossObstacle(int ix, int iy, Directions dir) { return -1;}
 	
+	private static void moveRobot(Directions dir) {
+			
+		Thread t1=new Thread( new AllThreads.Rotate(monitor, dir) );
+	
+		t1.start();
+		
+		try {
+			t1.join(); // aspetta che finisca la rotazione
+		}
+		catch(InterruptedException e) {
+			
+		}
+		
+		//avanza di una cella
+		
 	}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		Cella[][] campo= new Cella[DIM][DIM];
+		campo= new Cella[DIM][DIM];
 		for(int i=0; i<DIM; i++){
 			campo[i]= new Cella[DIM];
 			for(int j=0; j<DIM; j++){
 				campo[i][j]= new Cella();
 			}
 		}
-
+		
+		new Thread(AllThreads.D_start).start();
+		
+		monitor = new RotationMonitor();
+		Thread giroscopio = new Thread( new AllThreads.Gyro(monitor) );
+		giroscopio.start();
+		
+		moveRobot(Directions.UP);
+		Delay.msDelay(2000);
+		moveRobot(Directions.DOWN);
+		
+		S4  = LocalEV3.get().getPort("S4");
+		uSensor = new EV3UltrasonicSensor(S4);
+		
+		
+		/*
+		while(letto!='\0') {
+			
+	        String token = "";
+			char c;
+			try {
+				while ( ( c = (char) stream.readByte() ) != '&' ) {
+		            token += c;
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			LCD.clearDisplay();
+		
+			
+			int xt=token.charAt(0)-'0';
+			int yt=token.charAt(1)-'0';
+			int color=token.charAt(2)-'0';
+			
+			
+			
+			for rige
+				for col
+					if (cella i,j getColor
+			
+			move(x,y,xt,yt);
+				
+		}*/
+		
+		
+		
+		
+		
 		/* CONNESSIONE BLUETOOTH */
 /*
 		BTConnection setConn;
@@ -208,7 +290,7 @@ public class main_p {
 		Delay.msDelay(5000);
     */
 	/*GIROSCOPIO*/
-		//Robot Configuration
+ /*
 		Port S3 = LocalEV3.get().getPort("S3");
 		EV3GyroSensor gyroSensor = new EV3GyroSensor(S3);
 
@@ -219,10 +301,11 @@ public class main_p {
 		int value = 0;
         
 		
+		
 		//Control loop
         while(run) {
         	
-        	
+        	LCD.clear();
 
         	float [] sample = new float[sp.sampleSize()];
             sp.fetchSample(sample, 0);
@@ -234,7 +317,7 @@ public class main_p {
 			Delay.msDelay(500);
         }
 
-
+*/
 	/*	
 		while(run) {
 		

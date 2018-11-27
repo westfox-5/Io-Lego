@@ -1,6 +1,7 @@
 package main_prog;
 
 import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.Motor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3GyroSensor;
@@ -9,28 +10,24 @@ import main_prog.main_p.Directions;
 
 public class AllThreads {
 	
+	static int speed = 100;
+	
+	
 	
 	static class Gyro implements Runnable {
-		private MotorMonitor m;
+		private RotationMonitor m;
 		
-		Port S3 = LocalEV3.get().getPort("S3");
-		EV3GyroSensor sensor = new EV3GyroSensor(S3);
+		Port S3;
+		EV3GyroSensor sensor;
 
-		//Configuration
-
-
-		SampleProvider sp = sensor.getAngleAndRateMode();
-		int value = 0;
+		SampleProvider sp;
 		
-		public Gyro(MotorMonitor m) {
+		public Gyro(RotationMonitor m) {
 			this.m = m;
+			S3  = LocalEV3.get().getPort("S3");
+			sensor = new EV3GyroSensor(S3);
 			
-			//get initial angle
-			float [] sample = new float[sp.sampleSize()];
-            sp.fetchSample(sample, 0);
-            this.m.setInitAngle( (int)sample[0] );
-            
-			
+			sp = sensor.getAngleMode();
 		}
 		
 		public void run() {
@@ -38,32 +35,30 @@ public class AllThreads {
 				/* legge giroscopio*/
 				float [] sample = new float[sp.sampleSize()];
 	            sp.fetchSample(sample, 0);
-	            int angle = (int)sample[0];
-	            this.m.setAngle(angle);
+	            
+	            this.m.setAngle((int)sample[0]);
 	            
 	            
 			}
 		}
 	}
-	
-	
-	
-	
 
 	static class Rotate implements Runnable {
-		private MotorMonitor m;
+		private RotationMonitor m;
 		private Directions dir;
 
-		public Rotate(MotorMonitor m, Directions dir) {
+		public Rotate(RotationMonitor m, Directions dir) {
 			this.m = m;
 			
-			this.dir = dir;
-            
-			
+			this.dir = dir;	
 		}
 		
 		public void run() {
-			this.m.gira(this.dir);
+			LCD.clear();
+			LCD.drawString("start rotation", 0, 4);
+			
+			while(this.m.gira(this.dir) == -1) {}
+	
 		}
 	}
 	
@@ -73,7 +68,7 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-			Motor.A.setSpeed(720);
+			Motor.A.setSpeed(speed);
 			Motor.A.forward();
 		}
 	};
@@ -82,8 +77,27 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-			Motor.B.setSpeed(720);
+			Motor.B.setSpeed(speed);
 			Motor.B.forward();
+			
+		}
+	};
+	
+	static Runnable A_indietro = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.A.setSpeed(speed);
+			Motor.A.backward();
+		}
+	};
+	
+	static Runnable B_indietro = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.B.setSpeed(speed);
+			Motor.B.backward();
 			
 		}
 	};
@@ -105,36 +119,13 @@ public class AllThreads {
 			
 		}
 	};
-	
-	
-	
-	static Runnable giradx_A = new Runnable() {
+	static Runnable D_start = new Runnable() {
 		
 		@Override
 		public void run() {
-			Motor.A.rotate(20);
-		}
-	};
-	static Runnable giradx_B = new Runnable() {
-		
-		@Override
-		public void run() {
-			Motor.B.rotate(-20);
-		}
-	};
-	
-	static Runnable girasx_A = new Runnable() {
-		
-		@Override
-		public void run() {
-			Motor.A.rotate(20);
-		}
-	};
-	static Runnable girasx_B = new Runnable() {
-		
-		@Override
-		public void run() {
-			Motor.B.rotate(-20);
+			Motor.D.setSpeed(720);
+			Motor.D.forward();
+			
 		}
 	};
 }

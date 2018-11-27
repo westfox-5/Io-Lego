@@ -261,7 +261,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startSearch() {
         numberOfCells = 0;
-        String message = "&";
+        String message = "";
         for (int i = 0; i < 5; i++) {
             for (int j = 0; i < 5; i++) {
                 if (map[i][j] != 0) {
