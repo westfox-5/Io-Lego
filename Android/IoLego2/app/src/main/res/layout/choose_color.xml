@@ -11,9 +11,10 @@
 
     <TextView
         android:id="@+id/textView"
-        android:layout_margin="10dp"
+        android:layout_margin="5dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight=".20"
         android:text="CHOOSE THE COLOR"
         android:textAlignment="center"
         android:textColor="@android:color/white"
@@ -22,9 +23,10 @@
     <LinearLayout
 
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:orientation="horizontal"
         android:weightSum="1"
+        android:layout_weight=".27"
         >
 
     <Button
@@ -35,6 +37,7 @@
         android:layout_margin="5dp"
         android:background="@color/yellow"
         android:onClick="setColor"
+        android:textSize="16dp"
         android:text="YELLOW" />
 
     <Button
@@ -45,6 +48,7 @@
         android:layout_margin="5dp"
         android:background="@color/blue"
         android:onClick="setColor"
+        android:textSize="16dp"
         android:text="BLUE" />
 
     </LinearLayout>
@@ -53,7 +57,8 @@
 
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight=".27"
         android:weightSum="1">
 
     <Button
@@ -64,6 +69,7 @@
         android:layout_margin="5dp"
         android:background="@color/green"
         android:onClick="setColor"
+        android:textSize="16dp"
         android:text="GREEN" />
 
     <Button
@@ -74,28 +80,21 @@
         android:layout_margin="5dp"
         android:background="@color/red"
         android:onClick="setColor"
+        android:textSize="16dp"
         android:text="@string/color_red" />
     </LinearLayout>
 
     <Button
-
+        android:layout_weight="0.24"
         android:id="@+id/undo"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_margin="5dp"
         android:background="@android:color/white"
         android:onClick="setColor"
+        android:textSize="16dp"
         android:text="undo" />
 
-    <Button
-        android:id="@+id/robot"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:background="#000000"
-        android:textColor="@color/white"
-        android:onClick="setColor"
-        android:text="PLACE ROBOT"
-        />
+
 
 </LinearLayout>

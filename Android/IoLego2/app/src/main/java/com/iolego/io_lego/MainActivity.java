@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
+import android.os.CountDownTimer;
 import android.os.ParcelUuid;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -31,11 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "BTConnectionActivity";
     private static String MAC_ADDRESS = null;
     private static final String ID_LEGO = "EV3";
-
-
     private static final int VOLTAGE_LOW = 20;
     private static final int VOLTAGE_MIDDLE = 50;
-
     private static final int CHECK = 100;
     private static final int END = 255;
 
@@ -47,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private View robotPlaceBtn, progressLayout;
     private int map[][];
     private int x,y;
-    public Dialog colorChooseDialog, reconnectDialog;
+    public Dialog colorChooseDialog, reconnectDialog,startUpDialog;
     private BluetoothSocket socket;
     private InputStream inputStream;
     private OutputStream outputStream;
@@ -56,8 +54,43 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        /*start*/
         super.onCreate(savedInstanceState);
+
+        /*startup creation*/
+        startUpDialog=new Dialog(this,android.R.style.Theme_Black_NoTitleBar);
+        startUpDialog.setContentView(R.layout.startup);
+        startUpDialog.show();
+        new CountDownTimer(3000, 1000) {
+            public void onFinish() {
+                startUpDialog.getWindow().setWindowAnimations(R.style.DialogAnimation);
+                /*qui ci sarebbe da mettere la connessione al bluethooth secondo me*/
+                startUpDialog.hide();
+            }
+
+            public void onTick(long millisUntilFinished) {
+                // millisUntilFinished    The amount of time until finished.
+            }
+        }.start();
+
+        /*choose ccolor creation*/
+        colorChooseDialog=new Dialog(this);
+        colorChooseDialog.setContentView(R.layout.choose_color);
+        colorChooseDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+        /*reconnect */
+        reconnectDialog=new Dialog(this);
+
+
         setContentView(R.layout.activity_main_refactor);
+
+        /* altre robe*/
+        bar=findViewById(R.id.prog_bar);
+        bluetoothImage = findViewById(R.id.bluetoothImg);
+        batteryImage = findViewById(R.id.batteryImg);
+        progressLayout = findViewById(R.id.relProgbar);
+        progressLayout.setVisibility(View.INVISIBLE);
 
         map=new int[5][5];
         for(int i=0;i<5;i++){
@@ -65,20 +98,6 @@ public class MainActivity extends AppCompatActivity {
                 map[i][j]=0;
             }
         }
-
-
-        colorChooseDialog=new Dialog(this);
-        colorChooseDialog.setContentView(R.layout.choose_color);
-        colorChooseDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        robotPlaceBtn = colorChooseDialog.findViewById(R.id.robot);
-        reconnectDialog=new Dialog(this);
-        bar=findViewById(R.id.prog_bar);
-
-        bluetoothImage = findViewById(R.id.bluetoothImg);
-        batteryImage = findViewById(R.id.batteryImg);
-        progressLayout = findViewById(R.id.relProgbar);
-
-        progressLayout.setVisibility(View.INVISIBLE);
 
         /*
         createDialog();
@@ -233,13 +252,14 @@ public class MainActivity extends AppCompatActivity {
             case "undo":
                 b.setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
                 Log.d("color", "undo in "+x+y);
+                /*
                 if(map[x][y]==-1){
                     robotPlaceBtn.setVisibility(View.VISIBLE);
                     robot=false;
-                }
+                }*/
                 map[x][y]=0;
                 break;
-
+        /*
             case "robot":
                 if(!robot) {
                     b.setBackgroundColor(ContextCompat.getColor(this, R.color.black));
@@ -249,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
                     robotPlaceBtn.setVisibility(View.GONE);
                 }
                 break;
+         */
         }
         colorChooseDialog.hide();
 
@@ -261,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startSearch() {
         numberOfCells = 0;
-        String message = "";
+        String message = "&";
         for (int i = 0; i < 5; i++) {
             for (int j = 0; i < 5; i++) {
                 if (map[i][j] != 0) {

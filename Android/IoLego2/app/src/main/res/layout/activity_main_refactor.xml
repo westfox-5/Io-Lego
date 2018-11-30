@@ -1,30 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<LinearLayout
+    android:orientation="vertical"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:weightSum="1"
     android:layout_height="match_parent">
-
 
     <!-- Barra verde superiore -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:background="@color/colorPrimary"
-
+        android:layout_weight=".2"
+        android:weightSum="1"
         android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@id/grid"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.52">
+        app:layout_constraintVertical_bias="0.52"
+        android:layout_marginBottom="15dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_weight="0.6"
             android:layout_marginTop="5dp"
+            android:weightSum="1"
             android:orientation="horizontal">
 
             <ImageView
@@ -38,10 +42,10 @@
                 android:id="@+id/topTXT"
                 android:layout_width="0dp"
                 android:layout_weight="0.8"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:gravity="center"
                 android:text="@string/app_name"
-                android:textSize="25sp" />
+                android:textSize="40sp" />
 
             <ImageView
                 android:id="@+id/batteryImg"
@@ -56,7 +60,7 @@
         <RelativeLayout
             android:id="@+id/relProgbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_weight="0.4"
             android:padding="4dp">
 
@@ -64,12 +68,12 @@
                 android:id="@+id/prog_bar"
                 style="@android:style/Widget.Holo.ProgressBar.Horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="match_parent"
                 android:progressDrawable="@drawable/progress_bar" />
 
             <TextView
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="match_parent"
                 android:gravity="center"
                 android:text="Searching..."
                 android:textSize="18sp" />
@@ -80,6 +84,8 @@
 
     <!-- Griglia -->
     <LinearLayout
+
+        android:layout_weight=".7"
         android:id="@+id/grid"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -92,10 +98,11 @@
 
 
         <!-- 5 righe -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="0.2"
+            android:layout_weight=".2"
             android:orientation="horizontal">
 
             <ImageButton
@@ -116,9 +123,7 @@
                 android:layout_weight=".20"
                 android:background="@color/light_grey"
                 android:gravity="center"
-                android:onClick="chooseColor"
-
-                />
+                android:onClick="chooseColor" />
 
             <ImageButton
                 android:id="@+id/b02"
@@ -140,7 +145,9 @@
                 android:layout_weight=".20"
                 android:background="@color/light_grey"
                 android:gravity="center"
-                android:onClick="chooseColor" />
+                android:onClick="chooseColor"
+
+                />
 
             <ImageButton
                 android:id="@+id/b04"
@@ -151,12 +158,15 @@
                 android:background="@color/light_grey"
                 android:gravity="center"
                 android:onClick="chooseColor" />
+
         </LinearLayout>
+
+
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="0.2"
+            android:layout_weight=".2"
             android:orientation="horizontal">
 
             <ImageButton
@@ -187,7 +197,9 @@
                 android:layout_weight=".20"
                 android:background="@color/light_grey"
                 android:gravity="center"
-                android:onClick="chooseColor" />
+                android:onClick="chooseColor"
+
+                />
 
             <ImageButton
                 android:id="@+id/b13"
@@ -197,7 +209,9 @@
                 android:layout_weight=".20"
                 android:background="@color/light_grey"
                 android:gravity="center"
-                android:onClick="chooseColor" />
+                android:onClick="chooseColor"
+
+                />
 
             <ImageButton
                 android:id="@+id/b14"
@@ -208,7 +222,9 @@
                 android:background="@color/light_grey"
                 android:gravity="center"
                 android:onClick="chooseColor" />
+
         </LinearLayout>
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -396,16 +412,18 @@
     <!-- Start Button -->
     <Button
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-
-        android:layout_margin="8dp"
+        android:layout_height="0dp"
+        android:layout_margin="7dp"
         android:id="@+id/startBtn"
+        android:layout_weight="0.1"
+
+        android:onClick="startSearch"
+        android:text="START SEARCH"
 
         app:layout_constraintTop_toBottomOf="@id/grid"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        />
 
-        android:onClick="startSearch"
-        android:text="START SEARCH" />
-</android.support.constraint.ConstraintLayout>
+</LinearLayout>
