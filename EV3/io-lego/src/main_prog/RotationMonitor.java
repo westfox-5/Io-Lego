@@ -59,7 +59,7 @@ public class RotationMonitor {
 		}
 		
 		int diff = correctAngle-angle;
-	
+			
 		if(diff < 0) {
 			// girare destra
 			gira_destra[0].start();
@@ -76,10 +76,7 @@ public class RotationMonitor {
 		if( diff == 0) {
 			LCD.clear();
 			LCD.drawInt(angle, 0, 4);
-			gira_sinistra[0].interrupt();
-			gira_sinistra[1].interrupt();
-			gira_destra[0].interrupt();
-			gira_destra[0].interrupt();
+
 			try {
 			gira_sinistra[0].join();
 			gira_sinistra[1].join();

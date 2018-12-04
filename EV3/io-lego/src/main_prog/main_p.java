@@ -29,52 +29,36 @@ import main_prog.AllThreads;
 public class main_p {
 	
 	enum Directions { UP, DOWN, LEFT, RIGHT	}
-	
-	enum Colors {
-		BLACK (35);
-			
-		private final int colorCode;
-		
-		private Colors(int colorCode) {
-			this.colorCode = colorCode;
-		}
-		
-		private int getCode() {
-			return this.colorCode;
-		}
-	}
-	
-	private final static int DIM = 5;
-	private final static int SOGLIA_OSTACOLO = 1000;
+
+
+	private final static int DIM = 4;
+	private final static double DEFAULT_DISTANCE = 0.1;
 	private static Boolean run=true;
 	private static Cella[][] campo;
 	private static RotationMonitor monitor;
 	
+	private static Port S2;
 	private static Port S4;
+	private static EV3ColorSensor colorSensor;
 	private static EV3UltrasonicSensor uSensor;
-	private static SampleProvider distance;
+	private static SampleProvider distanceProvider;
 	private static int defaultDistance;
 	private static char letto;
 	private static int x;
 	private static int y;
-	
-	public main_p() {
-		defaultDistance=-1;
-		x=0;
-		y=0;
-	}
-	
 
 	public static void setInitialPosition(int x, int y){
 		campo[x][y].setPosition();
 	}
 
-	public static void setColors(int x, int y, Colors colore){
+	public static void setColors(int x, int y, ColorsRGB colore){
 		campo[x][y].setColor(colore);
 	}
 
+
 	public static void move(int ix, int iy, int fx, int fy){
 		int tmp= fx-ix;
+		String colorControl;
 		
 		while(tmp != 0){
 
@@ -123,14 +107,64 @@ public class main_p {
 			campo[ix][iy].setPosition();
 			tmp= fy-iy;
 		}
+		// ora bisogna controllare il colore se è giusto o no
+		colorControl= checkColor();
+		// ora si invia il colore all' app android e si andrebbe a controllare l'altro colore
+		
+		
+	}
+	
+	public static String checkColor() {
+		// inizializzo variabili per la porta
+		
+		SampleProvider colorProvider;
+		colorProvider=colorSensor.getRGBMode();
+		float[] colorSample;
+		int r,g,b;
+		String currentColor= "colore non rilevato";
+		colorSample =new float[colorProvider.sampleSize()];
+			
+		colorProvider.fetchSample(colorSample, 0);
+		r = (int)(colorSample[0]*10*255);
+		g = (int)(colorSample[1]*10*255);
+		b = (int)(colorSample[2]*10*255);
+		
+		Thread tForward_A= new Thread(AllThreads.A_color_forward);
+		Thread tForward_B= new Thread(AllThreads.B_color_forward);
+		
+		tForward_A.start();
+		tForward_B.start();
+		try {
+			tForward_A.join();
+			tForward_B.join();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		while(currentColor.equals("colore non rilevato")) {
+			currentColor= ColorsRGB.getColor(r, g, b);
+		}
+		
+		Thread tBack_A= new Thread(AllThreads.A_color_backward);
+		Thread tBack_B= new Thread(AllThreads.B_color_backward);
+		
+		tBack_A.start();
+		tBack_B.start();
+		try {
+			tBack_A.join();
+			tBack_B.join();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return currentColor;
 	}
 	
 	private static boolean checkObstacle(Directions dir) {
 		
-		distance=uSensor.getDistanceMode();
+		distanceProvider=uSensor.getDistanceMode();
 		
-		float [] sample = new float[distance.sampleSize()];
-		distance.fetchSample(sample, 0);
+		float [] sample = new float[distanceProvider.sampleSize()];
+		distanceProvider.fetchSample(sample, 0);
 		
 		if(sample[0]!=defaultDistance) {
 			return true;
@@ -168,20 +202,64 @@ public class main_p {
 			}
 		}
 		
-		new Thread(AllThreads.D_start).start();
+		x=0;
+		y=0;
 		
+		
+//	Thread t = new Thread(AllThreads.D_start);
+//	t.start();
+		// fa girare i motori
+		/*
 		monitor = new RotationMonitor();
 		Thread giroscopio = new Thread( new AllThreads.Gyro(monitor) );
 		giroscopio.start();
 		
+		moveRobot(Directions.LEFT);
+		Delay.msDelay(1000);
 		moveRobot(Directions.UP);
-		Delay.msDelay(2000);
+		Delay.msDelay(1000);
 		moveRobot(Directions.DOWN);
+		*/
+		// inizializzazione sensore ultrasuoni
+		/*
+		S2  = LocalEV3.get().getPort("S2");
+		uSensor = new EV3UltrasonicSensor(S2);
+		distanceProvider=uSensor.getDistanceMode();
+		float d;
+		*/
+		// inizializzazione motori
+		/*
+		Thread t1 = new Thread( AllThreads.A_avanza);
+		Thread t2 = new Thread ( AllThreads.B_avanza);
 		
-		S4  = LocalEV3.get().getPort("S4");
-		uSensor = new EV3UltrasonicSensor(S4);
+		t1.start();
+		t2.start();
+		*/
+	/*	
 		
+		Delay.msDelay(1000);
 		
+		while(run) {
+			float[] sample = new float[distanceProvider.sampleSize()];
+			distanceProvider.fetchSample(sample, 0);
+
+			d = sample[0];
+			System.out.println(d);
+			// serve per far fermare il robot ad una certa distanza
+			
+			if( d < DEFAULT_DISTANCE) {
+				System.out.println("STOP");
+				
+				new Thread( AllThreads.A_stop) .start();
+				new Thread ( AllThreads.B_stop) .start();
+				
+				break;	
+			}
+			
+		
+			Delay.msDelay(500);
+		}
+	*/
 		/*
 		while(letto!='\0') {
 			
@@ -234,38 +312,42 @@ public class main_p {
 		*/
 		
 		
-
-	/*	PROVA COLORA
-		Port S1=LocalEV3.get().getPort("S1");
-		EV3ColorSensor color= new EV3ColorSensor(S1);
+		
+		//PROVA COLORE legge i colori se la linea è nera
+	
+		/*
+		Port S4=LocalEV3.get().getPort("S4");
+		EV3ColorSensor color= new EV3ColorSensor(S4);
 		SampleProvider colorProvider;
 		colorProvider=color.getRGBMode();
 		float[] colorSample;
 		
 		colorSample =new float[colorProvider.sampleSize()];
-		
+		*/
 		int r,g,b;
 		
 		Delay.msDelay(500);
 		LCD.clear();
 		
+	
+		// Si usano quando si usa la funzione checkColor
+		
+		S4= LocalEV3.get().getPort("S4");
+		colorSensor= new EV3ColorSensor(S4);
+	/*
 		Thread tA = new Thread(AllThreads.A_avanza);
 		Thread tB = new Thread(AllThreads.B_avanza);
-		
-		tA.start();
-		tB.start();
-		LCD.drawString("Battery: " + Battery.getVoltage(), 0, 0);
-		
+*/
 		while(run) {
+			LCD.clear();
+			/*
 			colorProvider.fetchSample(colorSample, 0);
-
-			LCD.clear(4);
-			LCD.clear(5);
-			LCD.clear(6);
+			
 			r = (int)(colorSample[0]*10*255);
 			g = (int)(colorSample[1]*10*255);
 			b = (int)(colorSample[2]*10*255);
-			
+		*/
+			/*//si ferma se il colore è nero
 			if (r+b+g < Colors.BLACK.getCode()) {
 				(new Thread(AllThreads.A_stop)).start();
 				(new Thread(AllThreads.B_stop)).start();
@@ -276,19 +358,25 @@ public class main_p {
 				(new Thread(AllThreads.B_avanza)).start();
 
 			}
-		
-			LCD.drawString("R  "+ r, 0, 4);
-			LCD.drawString("G  "+ g, 0, 5);
-			LCD.drawString("B  "+ b, 0, 6);
-					
-		
+			
+/*
+			(new Thread(AllThreads.A_avanza)).start();
+			(new Thread(AllThreads.B_avanza)).start();
+
+			color= checkColor();
+			
+		*/
+			String stringa= checkColor();
+			LCD.drawString("Colore "+ stringa, 0, 1);
+
+	
 			Delay.msDelay(100);
 		
 		}
-		
+	
 		
 		Delay.msDelay(5000);
-    */
+
 	/*GIROSCOPIO*/
  /*
 		Port S3 = LocalEV3.get().getPort("S3");

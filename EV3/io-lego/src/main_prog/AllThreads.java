@@ -12,7 +12,7 @@ public class AllThreads {
 	
 	static int speed = 100;
 	
-	
+	static int ROTATE_ANGLE_COLOR  = 500;
 	
 	static class Gyro implements Runnable {
 		private RotationMonitor m;
@@ -36,9 +36,7 @@ public class AllThreads {
 				float [] sample = new float[sp.sampleSize()];
 	            sp.fetchSample(sample, 0);
 	            
-	            this.m.setAngle((int)sample[0]);
-	            
-	            
+	            this.m.setAngle((int)sample[0]);	            
 			}
 		}
 	}
@@ -49,7 +47,6 @@ public class AllThreads {
 
 		public Rotate(RotationMonitor m, Directions dir) {
 			this.m = m;
-			
 			this.dir = dir;	
 		}
 		
@@ -62,7 +59,7 @@ public class AllThreads {
 		}
 	}
 	
-		
+
 	
 	static Runnable A_avanza = new Runnable() {
 		
@@ -126,6 +123,42 @@ public class AllThreads {
 			Motor.D.setSpeed(720);
 			Motor.D.forward();
 			
+		}
+	};
+	
+	
+	static Runnable A_color_forward = new Runnable() {
+		
+		
+		@Override
+		public void run() {
+		Motor.A.rotate(ROTATE_ANGLE_COLOR);
+		}
+	};
+	
+	static Runnable B_color_forward = new Runnable() {
+		
+		
+		@Override
+		public void run() {
+		Motor.B.rotate(ROTATE_ANGLE_COLOR);
+		}
+	};
+	
+	static Runnable A_color_backward = new Runnable() {
+		
+		
+		@Override
+		public void run() {
+		Motor.A.rotate(-ROTATE_ANGLE_COLOR);
+		}
+	};
+	static Runnable B_color_backward = new Runnable() {
+		
+		
+		@Override
+		public void run() {
+		Motor.B.rotate(-ROTATE_ANGLE_COLOR);
 		}
 	};
 }
