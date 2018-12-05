@@ -1,0 +1,7 @@
+# Class files
+/main_prog/*.class
+/*.class
+
+# Outputs
+/bin
+*.jar
