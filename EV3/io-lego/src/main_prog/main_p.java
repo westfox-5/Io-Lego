@@ -25,15 +25,21 @@ import lejos.robotics.navigation.Move;
 import lejos.utility.Delay;
 
 import main_prog.AllThreads;
+import main_prog.RobotBlockedException;
 
 public class main_p {
-	
+
 	enum Directions { UP, DOWN, LEFT, RIGHT	}
 
+	enum Colors { NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK}
 
-	private final static int DIM = 4;
+
+	private final static int ROWS = 5;
+	private final static int COLS = 4;
 	private final static double DEFAULT_DISTANCE = 0.1;
+
 	private static Boolean run=true;
+
 	private static Cella[][] campo;
 	private static RotationMonitor monitor;
 	
@@ -42,7 +48,6 @@ public class main_p {
 	private static EV3ColorSensor colorSensor;
 	private static EV3UltrasonicSensor uSensor;
 	private static SampleProvider distanceProvider;
-	private static int defaultDistance;
 	private static char letto;
 	private static int x;
 	private static int y;
@@ -54,7 +59,6 @@ public class main_p {
 	public static void setColors(int x, int y, ColorsRGB colore){
 		campo[x][y].setColor(colore);
 	}
-
 
 	public static void move(int ix, int iy, int fx, int fy){
 		int tmp= fx-ix;
@@ -84,13 +88,12 @@ public class main_p {
 		}
 
 		tmp=fy-iy;
-
 		while(tmp != 0){
 
 			campo[ix][iy].reset();
 			if(tmp > 0){ // DEVO ANDARE A RIGHT
 				if(checkObstacle(Directions.RIGHT)){
-					iy = crossObstacle(ix, iy, Directions.RIGHT);
+					iy = crossObstacle(ix, iy, Directions.RIGHT);					
 				}else{
 					moveRobot(Directions.RIGHT);
 					iy++;
@@ -107,8 +110,10 @@ public class main_p {
 			campo[ix][iy].setPosition();
 			tmp= fy-iy;
 		}
-		// ora bisogna controllare il colore se è giusto o no
-		colorControl= checkColor();
+
+		// ora bisogna controllare il colore se Ã¨ giusto o no
+		// colorControl= checkColor();
+
 		// ora si invia il colore all' app android e si andrebbe a controllare l'altro colore
 		
 		
@@ -121,7 +126,7 @@ public class main_p {
 		colorProvider=colorSensor.getRGBMode();
 		float[] colorSample;
 		int r,g,b;
-		String currentColor= "colore non rilevato";
+		String currentColor= Color.NOT_FOUND;
 		colorSample =new float[colorProvider.sampleSize()];
 			
 		colorProvider.fetchSample(colorSample, 0);
@@ -141,7 +146,7 @@ public class main_p {
 			e.printStackTrace();
 		}
 		
-		while(currentColor.equals("colore non rilevato")) {
+		while(currentColor == Colors.NOT_FOUND) {
 			currentColor= ColorsRGB.getColor(r, g, b);
 		}
 		
@@ -160,7 +165,17 @@ public class main_p {
 	}
 	
 	private static boolean checkObstacle(Directions dir) {
+
+		Thread rotate= new Thread( new AllThreads.Rotate(monitor, dir) );
+		rotate.start();
 		
+		try {
+			// aspetta che finisca la rotazione
+			rotate.join(); 
+		} catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		distanceProvider=uSensor.getDistanceMode();
 		
 		float [] sample = new float[distanceProvider.sampleSize()];
@@ -170,40 +185,141 @@ public class main_p {
 			return true;
 		}
 			
-		return false; }
+		return false; 
+	}
 	
-	private static int crossObstacle(int ix, int iy, Directions dir) { return -1;}
+	// ritorna il numero di riga o colonna dove Ã¨ arrivato il robot
+	/*
+		DOWN 				      UP		   RIGHT		   LEFT	
+		|R| |          |1|2|     |*| |        |R|*|           |*|R|
+		|*| |          |*|3|     |R| |        | | |		      | | |
+		| | |  return->|5|4|
+	*/
+
+	// va nella cella immediatamente successiva all'ostacolo secondo la direzione.
+	// se ostacolo Ã¨ sul bordo, va sempre sulla cella sopra o a destra.
+	private static int crossObstacle(int ix, int iy, Directions dir){ 
+		
+		// calcola la cella finale dove arrivare
+		int final_x = dir==Directions.DOWN  ? ix+2 : dir==Directions.UP   ? ix-2 : ix;
+		int final_y = dir==Directions.RIGHT ? iy+2 : dir==Directions.LEFT ? iy-2 : iy;
+
+		// controllo casi di ostacolo sul bordo
+		if( final_x < 0 ) 	{ final_x = 0;		final_y++; }
+		if( final_x > ROWS)	{ final_x = ROWS-1; final_y++; }
+		if( final_y < 0 )	{ final_y = 0;		final_x++; }
+		if( final_y > COLS) { final_y = COLS-1; final_x++; }
+
+
+		// sposta il robot facendo due step 'ad angolo'
+
+		switch(dir) {
+			case DOWN:
+			case UP:
+				// se puoi vai a destra
+				if(iy<COLS-1){
+					if(checkObstacle(Directions.RIGHT)){
+						iy= crossObstacle(ix, iy, Directions.RIGHT);
+					}else{
+						moveRobot(Directions.RIGHT);
+						iy--;	
+					}
+				}
+				// altrimenti vai a sinistra
+				else{
+					if(checkObstacle(Directions.LEFT)){
+						iy= crossObstacle(ix, iy, Directions.LEFT);
+					}else{
+						moveRobot(Directions.LEFT);
+						iy--;	
+					}
+				}
+
+			break;
+			case RIGHT:
+			case LEFT:
+				// se puoi vai giu
+				if(ix<ROWS-1){
+					if(checkObstacle(Directions.DOWN)){
+						iy= crossObstacle(ix, iy, Directions.DOWN);
+					}else{
+						moveRobot(Directions.DOWN);
+						iy--;	
+					}
+				}
+				// altrimenti vai su
+				else{
+					if(checkObstacle(Directions.UP)){
+						iy= crossObstacle(ix, iy, Directions.UP);
+					}else{
+						moveRobot(Directions.UP);
+						iy--;	
+					}
+				}
+			break;
+		}
+
+		// secondo step
+		if(checkObstacle(dir)){
+			ix = crossObstacle(ix, iy, dir);
+		}else{
+			moveRobot(dir);
+			ix++;
+		}	
+
+		//ora puoi far muovere il robot fino alla cella finale calcolata
+		move(ix, iy, final_x, final_y);
+
+		// ritornare la x se Ã¨ andato a right/left
+		// ritornare la y se Ã¨ andato a down/up
+		return dir==Directions.DOWN||dir==Directions.UP ? final_y: final_x;
+
+	}
 	
 	private static void moveRobot(Directions dir) {
 			
-		Thread t1=new Thread( new AllThreads.Rotate(monitor, dir) );
-	
-		t1.start();
+		Thread rotate= new Thread( new AllThreads.Rotate(monitor, dir) );
+		Thread nextCellA= new Thread( AllThreads.A_next_cell);
+		Thread nextCellB= new Thread( AllThreads.B_next_cell);
+
+		rotate.start();
 		
 		try {
-			t1.join(); // aspetta che finisca la rotazione
-		}
-		catch(InterruptedException e) {
-			
+			// aspetta che finisca la rotazione
+			rotate.join(); 
+		} catch(InterruptedException e) {
+			e.printStackTrace();
 		}
 		
 		//avanza di una cella
+		nextCellA.start();
+		nextCellB.start();
+		
+		try {
+			// aspetta che finisca il movimento
+			nextCellA.join(); 
+			nextCellB.join();
+		} catch(InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 	}
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
-		campo= new Cella[DIM][DIM];
-		for(int i=0; i<DIM; i++){
-			campo[i]= new Cella[DIM];
-			for(int j=0; j<DIM; j++){
+		campo= new Cella[ROWS][COLS];
+		for(int i=0; i<ROWS; i++){
+			campo[i]= new Cella[COLS];
+			for(int j=0; j<COLS; j++){
 				campo[i][j]= new Cella();
 			}
 		}
 		
 		x=0;
 		y=0;
+
+		setInitialPosition(0, 0);
+
+
 		
 		
 //	Thread t = new Thread(AllThreads.D_start);
@@ -245,12 +361,16 @@ public class main_p {
 
 			d = sample[0];
 			System.out.println(d);
-			// serve per far fermare il robot ad una certa distanza
+			// serve per far fe		Thread rotateThread=new Thread( new AllThreads.Rotate(monitor, dir) );
+	mare il robot ad una certa distanza
 			
-			if( d < DEFAULT_DISTANCE) {
-				System.out.println("STOP");
+			if( d < DEFAULT_DIS		Thread rotateThread=new Thread( new AllThreads.Rotate(monitor, dir) );
+	ANCE) {
+				System.out.prin		Thread rotateThread=new Thread( new AllThreads.Rotate(monitor, dir) );
+	ln("STOP");
 				
-				new Thread( AllThreads.A_stop) .start();
+				new Thread( All		Thread rotateThread=new Thread( new AllThreads.Rotate(monitor, dir) );
+	hreads.A_stop) .start();
 				new Thread ( AllThreads.B_stop) .start();
 				
 				break;	
@@ -313,7 +433,7 @@ public class main_p {
 		
 		
 		
-		//PROVA COLORE legge i colori se la linea è nera
+		//PROVA COLORE legge i colori se la linea ï¿½ nera
 	
 		/*
 		Port S4=LocalEV3.get().getPort("S4");
@@ -323,31 +443,29 @@ public class main_p {
 		float[] colorSample;
 		
 		colorSample =new float[colorProvider.sampleSize()];
-		*/
+		
 		int r,g,b;
 		
 		Delay.msDelay(500);
-		LCD.clear();
+		LTELEFONO CD.clear();
 		
-	
 		// Si usano quando si usa la funzione checkColor
 		
 		S4= LocalEV3.get().getPort("S4");
 		colorSensor= new EV3ColorSensor(S4);
-	/*
+	
 		Thread tA = new Thread(AllThreads.A_avanza);
 		Thread tB = new Thread(AllThreads.B_avanza);
-*/
+
 		while(run) {
 			LCD.clear();
-			/*
+			
 			colorProvider.fetchSample(colorSample, 0);
 			
 			r = (int)(colorSample[0]*10*255);
 			g = (int)(colorSample[1]*10*255);
 			b = (int)(colorSample[2]*10*255);
-		*/
-			/*//si ferma se il colore è nero
+		
 			if (r+b+g < Colors.BLACK.getCode()) {
 				(new Thread(AllThreads.A_stop)).start();
 				(new Thread(AllThreads.B_stop)).start();
@@ -359,23 +477,18 @@ public class main_p {
 
 			}
 			
-/*
+
 			(new Thread(AllThreads.A_avanza)).start();
 			(new Thread(AllThreads.B_avanza)).start();
 
 			color= checkColor();
 			
-		*/
-			String stringa= checkColor();
-			LCD.drawString("Colore "+ stringa, 0, 1);
-
-	
-			Delay.msDelay(100);
 		
+			
 		}
+
+*/
 	
-		
-		Delay.msDelay(5000);
 
 	/*GIROSCOPIO*/
  /*
@@ -406,6 +519,8 @@ public class main_p {
         }
 
 */
+
+/* LETTURA CARATTERI DA APP */
 	/*	
 		while(run) {
 		

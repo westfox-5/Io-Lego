@@ -10,9 +10,9 @@ import main_prog.main_p.Directions;
 
 public class AllThreads {
 	
-	static int speed = 100;
-	
-	static int ROTATE_ANGLE_COLOR  = 500;
+	private static final int DEFAULT_ROTATION = 700;
+	private static final int ROTATION_SPEED = 100;
+	private static final int ROTATION_CHECK_COLOR  = 500;
 	
 	static class Gyro implements Runnable {
 		private RotationMonitor m;
@@ -61,39 +61,39 @@ public class AllThreads {
 	
 
 	
-	static Runnable A_avanza = new Runnable() {
+	static Runnable A_rotation_forward = new Runnable() {
 		
 		@Override
 		public void run() {
-			Motor.A.setSpeed(speed);
+			Motor.A.setSpeed(ROTATION_SPEED);
 			Motor.A.forward();
 		}
 	};
 	
-	static Runnable B_avanza = new Runnable() {
+	static Runnable B_rotation_forward = new Runnable() {
 		
 		@Override
 		public void run() {
-			Motor.B.setSpeed(speed);
+			Motor.B.setSpeed(ROTATION_SPEED);
 			Motor.B.forward();
 			
 		}
 	};
 	
-	static Runnable A_indietro = new Runnable() {
+	static Runnable A_rotation_backward = new Runnable() {
 		
 		@Override
 		public void run() {
-			Motor.A.setSpeed(speed);
+			Motor.A.setSpeed(ROTATION_SPEED);
 			Motor.A.backward();
 		}
 	};
 	
-	static Runnable B_indietro = new Runnable() {
+	static Runnable B_rotation_backward = new Runnable() {
 		
 		@Override
 		public void run() {
-			Motor.B.setSpeed(speed);
+			Motor.B.setSpeed(ROTATION_SPEED);
 			Motor.B.backward();
 			
 		}
@@ -125,6 +125,15 @@ public class AllThreads {
 			
 		}
 	};
+
+	static Runnable D_stop = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.D.stop();
+			
+		}
+	};
 	
 	
 	static Runnable A_color_forward = new Runnable() {
@@ -132,7 +141,7 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.A.rotate(ROTATE_ANGLE_COLOR);
+		Motor.A.rotate(ROTATION_CHECK_COLOR);
 		}
 	};
 	
@@ -141,7 +150,7 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.B.rotate(ROTATE_ANGLE_COLOR);
+		Motor.B.rotate(ROTATION_CHECK_COLOR);
 		}
 	};
 	
@@ -150,7 +159,7 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.A.rotate(-ROTATE_ANGLE_COLOR);
+		Motor.A.rotate(-ROTATION_CHECK_COLOR);
 		}
 	};
 	static Runnable B_color_backward = new Runnable() {
@@ -158,7 +167,24 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.B.rotate(-ROTATE_ANGLE_COLOR);
+		Motor.B.rotate(-ROTATION_CHECK_COLOR);
+		}
+	};
+
+	static Runnable A_next_cell = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.A.rotate(DEFAULT_ROTATION);
+		}
+	};
+	
+	static Runnable B_next_cell = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.B.rotate(DEFAULT_ROTATION);
+			
 		}
 	};
 }

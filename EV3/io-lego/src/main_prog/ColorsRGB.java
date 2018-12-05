@@ -1,5 +1,7 @@
 package main_prog;
 
+import main_p.Colors;
+
 public class ColorsRGB {
 	
 	private static int[] R= {200, 90, 90};
@@ -12,20 +14,20 @@ public class ColorsRGB {
 	public static String getColor(int r, int g, int b) {
 		
 		if(r >= R[0] && g <= R[1] && b <= R[2]) {
-			return "red";
+			return Colors.RED;
 		}
 		else if(r <= G[0] && g >= G[1] && b <= G[2]) {
-			return "green";
+			return Colors.GREEN;
 		}
 		else if(r <= B[0] && g <= B[1] && b >= B[2]) {
-			return "blue";
+			return Colors.BLUE;
 		}
 		else if(r >= Y[0] && g >= Y[1] && b <= Y[2]) {
-			return "yellow";
+			return Colors.YELLOW;
 		}
 		else if(r <= BLACK[0] && g <= BLACK[1] && b <= BLACK[2]) {
-			return "black";
+			return Colors.BLACK;
 		}
-		return "colore non rilevato";
+		return Colors.NOT_FOUND;
 	}
 }
