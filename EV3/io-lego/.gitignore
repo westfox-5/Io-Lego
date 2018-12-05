@@ -5,3 +5,6 @@
 # Outputs
 /bin
 *.jar
+
+# editors 
+/.vscode
