@@ -1,12 +1,10 @@
 package main_prog;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
-
+import java.util.ArrayList;
 
 import lejos.hardware.Battery;
 import lejos.hardware.ev3.LocalEV3;
@@ -19,9 +17,7 @@ import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorMode;
-import lejos.remote.nxt.BTConnection;
-import lejos.remote.nxt.BTConnector;
-import lejos.remote.nxt.NXTConnection;
+
 import lejos.robotics.SampleProvider;
 import lejos.robotics.navigation.Move;
 import lejos.utility.Delay;
@@ -31,9 +27,9 @@ import main_prog.RobotBlockedException;
 
 public class main_p {
 
+	enum Prints { START, PARSE, BT_CONN, MOVE, CHECK_COL, END }
 	enum Directions { UP, DOWN, LEFT, RIGHT	}
-
-	enum Colors { NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK}
+	enum Colors { NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK }
 
 
 	private final static int ROWS = 5;
@@ -41,6 +37,8 @@ public class main_p {
 	private final static double DEFAULT_DISTANCE = 0.1;
 
 	private static Boolean run=true;
+
+	private static BluetoothConnector bt;
 
 	private static Cella[][] campo;
 	private static RotationMonitor monitor;
@@ -54,81 +52,66 @@ public class main_p {
 	private static int x;
 	private static int y;
 
-	public static void setInitialPosition(int x, int y){
-		campo[x][y].setPosition();
-	}
-
-	public static void setColors(int x, int y, ColorsRGB colore){
-		campo[x][y].setColor(colore);
-	}
-
-	public static void move(int ix, int iy, int fx, int fy){
-		int tmp= fx-ix;
-		String colorControl;
+	public static void moveTo(int fx, int fy){
+		int tmp= fx-x;
 		
 		while(tmp != 0){
 
-			campo[ix][iy].reset();
+			campo[x][y].reset();
 			if(tmp > 0){ // DEVO ANDARE DOWN
 				if(checkObstacle(Directions.DOWN)){
-					ix = crossObstacle(ix, iy, Directions.DOWN);
+					x = crossObstacle(Directions.DOWN);
 				}else{
 					moveRobot(Directions.DOWN);
-					ix++;
+					x++;
 				}	
 			}
 			else if(tmp < 0){ //DEVO ANDARE UP
 				if(checkObstacle(Directions.UP)){
-					ix= crossObstacle(ix, iy, Directions.UP);
+					x= crossObstacle(Directions.UP);
 				}else{
 					moveRobot(Directions.UP);
-					ix--;	
+					x--;	
 				}
 			}
-			campo[ix][iy].setPosition();
-			tmp= fx-ix;
+			campo[x][y].setPosition();
+			tmp= fx-x;
 		}
 
-		tmp=fy-iy;
+		tmp=fy-y;
 		while(tmp != 0){
 
-			campo[ix][iy].reset();
+			campo[x][y].reset();
 			if(tmp > 0){ // DEVO ANDARE A RIGHT
 				if(checkObstacle(Directions.RIGHT)){
-					iy = crossObstacle(ix, iy, Directions.RIGHT);					
+					y = crossObstacle(Directions.RIGHT);					
 				}else{
 					moveRobot(Directions.RIGHT);
-					iy++;
-				}	
+					y++;
+				}
 			}
 			else if(tmp < 0){// DEVO ANDARE A LEFT
 				if(checkObstacle(Directions.LEFT)){
-					iy= crossObstacle(ix, iy, Directions.LEFT);
+					y= crossObstacle(Directions.LEFT);
 				}else{
 					moveRobot(Directions.LEFT);
-					iy--;	
+					y--;	
 				}
 			}
-			campo[ix][iy].setPosition();
-			tmp= fy-iy;
-		}
-
-		// ora bisogna controllare il colore se è giusto o no
-		// colorControl= checkColor();
-
-		// ora si invia il colore all' app android e si andrebbe a controllare l'altro colore
-		
+			campo[x][y].setPosition();
+			tmp= fy-y;
+		}	
 		
 	}
 	
-	public static String checkColor() {
+	public static Colors checkColor() {
 		// inizializzo variabili per la porta
 		
 		SampleProvider colorProvider;
 		colorProvider=colorSensor.getRGBMode();
 		float[] colorSample;
 		int r,g,b;
-		String currentColor= Color.NOT_FOUND;
+		Colors currentColor= Colors.NOT_FOUND;
 		colorSample =new float[colorProvider.sampleSize()];
 			
 		colorProvider.fetchSample(colorSample, 0);
@@ -200,11 +183,11 @@ public class main_p {
 
 	// va nella cella immediatamente successiva all'ostacolo secondo la direzione.
 	// se ostacolo è sul bordo, va sempre sulla cella sopra o a destra.
-	private static int crossObstacle(int ix, int iy, Directions dir){ 
+	private static int crossObstacle(Directions dir){ 
 		
 		// calcola la cella finale dove arrivare
-		int final_x = dir==Directions.DOWN  ? ix+2 : dir==Directions.UP   ? ix-2 : ix;
-		int final_y = dir==Directions.RIGHT ? iy+2 : dir==Directions.LEFT ? iy-2 : iy;
+		int final_x = dir==Directions.DOWN  ? x+2 : dir==Directions.UP   ? x-2 : x;
+		int final_y = dir==Directions.RIGHT ? y+2 : dir==Directions.LEFT ? y-2 : y;
 
 		// controllo casi di ostacolo sul bordo
 		if( final_x < 0 ) 	{ final_x = 0;		final_y++; }
@@ -219,21 +202,21 @@ public class main_p {
 			case DOWN:
 			case UP:
 				// se puoi vai a destra
-				if(iy<COLS-1){
+				if(y<COLS-1){
 					if(checkObstacle(Directions.RIGHT)){
-						iy= crossObstacle(ix, iy, Directions.RIGHT);
+						y= crossObstacle(Directions.RIGHT);
 					}else{
 						moveRobot(Directions.RIGHT);
-						iy--;	
+						y--;	
 					}
 				}
 				// altrimenti vai a sinistra
 				else{
 					if(checkObstacle(Directions.LEFT)){
-						iy= crossObstacle(ix, iy, Directions.LEFT);
+						y= crossObstacle(Directions.LEFT);
 					}else{
 						moveRobot(Directions.LEFT);
-						iy--;	
+						y--;	
 					}
 				}
 
@@ -241,21 +224,21 @@ public class main_p {
 			case RIGHT:
 			case LEFT:
 				// se puoi vai giu
-				if(ix<ROWS-1){
+				if(x<ROWS-1){
 					if(checkObstacle(Directions.DOWN)){
-						iy= crossObstacle(ix, iy, Directions.DOWN);
+						y= crossObstacle(Directions.DOWN);
 					}else{
 						moveRobot(Directions.DOWN);
-						iy--;	
+						y--;	
 					}
 				}
 				// altrimenti vai su
 				else{
 					if(checkObstacle(Directions.UP)){
-						iy= crossObstacle(ix, iy, Directions.UP);
+						y= crossObstacle(Directions.UP);
 					}else{
 						moveRobot(Directions.UP);
-						iy--;	
+						y--;	
 					}
 				}
 			break;
@@ -263,14 +246,14 @@ public class main_p {
 
 		// secondo step
 		if(checkObstacle(dir)){
-			ix = crossObstacle(ix, iy, dir);
+			x = crossObstacle(dir);
 		}else{
 			moveRobot(dir);
-			ix++;
+			x++;
 		}	
 
 		//ora puoi far muovere il robot fino alla cella finale calcolata
-		move(ix, iy, final_x, final_y);
+		moveTo(final_x, final_y);
 
 		// ritornare la x se è andato a right/left
 		// ritornare la y se è andato a down/up
@@ -307,6 +290,69 @@ public class main_p {
 		
 	}
 
+	public static boolean parseInput() {
+		String[] tokens = bt.parseInput();
+		if(tokens==null) return false;
+		for (String t : tokens) {
+			int xt=t.charAt(0)-'0';
+			int yt=t.charAt(1)-'0';
+			int color=t.charAt(2)-'0';
+			Colors col;
+			switch(color) {
+				case 1:
+					col = Colors.YELLOW;
+					break;
+				case 2:
+					col= Colors.BLUE;
+					break;
+				case 3:
+					col= Colors.GREEN;
+					break;
+				case 4:
+					col= Colors.RED;
+					break;
+				default: 
+					col= null;
+					break;
+			}
+
+			campo[xt][yt].setColor(col);
+		}
+		return true;
+	}
+
+	private static void print(Prints info, int x, int y) {
+		switch(info) {
+			case START: 
+				LCD.clear();
+				LCD.drawString("IO - LEGO", 0,1);
+			break;
+			case BT_CONN: 
+				LCD.drawString("BT connected",1,1);
+			break;
+			case PARSE: 
+				LCD.clear(0,4);
+				LCD.drawString("Receiving data");
+				break;
+			case MOVE: 
+				LCD.clear(0,4);
+				LCD.clear(0,5);
+				LCD.drawString("next:",0,4);
+				LCD.drawString("X: "+x +" Y: "+y,0,5);
+				break;
+			case CHECK_COL: 
+				LCD.clear(0,4);
+				LCD.clear(0,5);
+				LCD.drawString("Sending color...",0,4);
+				break;
+			case END: 
+				LCD.clear(0,4);
+				LCD.clear(0,5);
+				LCD.drawString("Finish!",0,4);
+		}
+	}
+
+
 	public static void main(String[] args) {
 		campo= new Cella[ROWS][COLS];
 		for(int i=0; i<ROWS; i++){
@@ -317,10 +363,40 @@ public class main_p {
 		}
 		
 		x=0;
-		y=0;
+		y=0;		
+		campo[x][y].setPosition();
+		
+		BluetoothConnector bt = new BluetoothConnector();
+		print(Prints.BT_CONN,0,0);
+		
+		bt.sendBatteryInfo();
 
-		setInitialPosition(0, 0);
+		print(Prints.PARSE, 0,0);
+		parseInput();
 
+		Colors colorControl;
+		for(int i =0; i<ROWS; i++) {
+			for(int j =0; j<COLS; j++) {
+
+				if(campo[i][j].hasColor()) {
+
+					print(Prints.MOVE, i, j);
+					// spostamento robot fino a quella posizione
+					moveTo(i,j);
+
+					// ora bisogna controllare il colore se è giusto o no, 
+					// si invia il colore all' app android e si andrebbe a controllare l'altro colore
+
+					print(Prints.CHECK_COL, 0, 0);
+					bt.sendColor( checkColor() );
+				}
+			}
+		}
+
+		print(Prints.END, 0,0);
+		bt.sendCloseToken();
+
+	
 
 		
 		
@@ -417,13 +493,7 @@ public class main_p {
 		
 		/* CONNESSIONE BLUETOOTH */
 /*
-		BTConnection setConn;
-		BTConnector set=new BTConnector();
-		
-		setConn=set.waitForConnection(10,NXTConnection.RAW);
-		
-		InputStream in = setConn.openInputStream();
-		DataInputStream stream = new DataInputStream(in);
+
 */
 		
 		/*

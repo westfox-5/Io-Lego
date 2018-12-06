@@ -51,11 +51,7 @@ public class AllThreads {
 		}
 		
 		public void run() {
-			LCD.clear();
-			LCD.drawString("start rotation", 0, 4);
-			
 			while(this.m.gira(this.dir) == -1) {}
-	
 		}
 	}
 	

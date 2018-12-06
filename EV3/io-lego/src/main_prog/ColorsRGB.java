@@ -1,6 +1,6 @@
 package main_prog;
 
-import main_p.Colors;
+import main_prog.main_p.Colors;
 
 public class ColorsRGB {
 	
@@ -11,7 +11,7 @@ public class ColorsRGB {
 	private static int[] BLACK= {15,15,15};
 	
 	
-	public static String getColor(int r, int g, int b) {
+	public static Colors getColor(int r, int g, int b) {
 		
 		if(r >= R[0] && g <= R[1] && b <= R[2]) {
 			return Colors.RED;

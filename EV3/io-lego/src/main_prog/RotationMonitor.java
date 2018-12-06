@@ -22,19 +22,19 @@ public class RotationMonitor {
 	
 	public synchronized int gira(Directions dir) {
 		Thread[] gira_destra = new Thread[2];
-		gira_destra[0] = new Thread(AllThreads.A_avanza);
-		gira_destra[1] = new Thread(AllThreads.B_indietro);
+		gira_destra[0] = new Thread(AllThreads.A_rotation_forward);
+		gira_destra[1] = new Thread(AllThreads.B_rotation_backward);
 		
 		Thread[] gira_sinistra = new Thread[2];
-		gira_sinistra[0] = new Thread(AllThreads.A_indietro);
-		gira_sinistra[1] = new Thread(AllThreads.B_avanza);
+		gira_sinistra[0] = new Thread(AllThreads.A_rotation_backward);
+		gira_sinistra[1] = new Thread(AllThreads.B_rotation_forward);
 		
 		while(!set) {
 			try {
 				wait();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+				return -1;
 			}
 		}
 		
@@ -74,9 +74,6 @@ public class RotationMonitor {
 		}
 	
 		if( diff == 0) {
-			LCD.clear();
-			LCD.drawInt(angle, 0, 4);
-
 			try {
 			gira_sinistra[0].join();
 			gira_sinistra[1].join();
