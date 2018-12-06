@@ -1,5 +1,5 @@
 # Class files
-/main_prog/*.class
+/src/main_prog/*.class
 /*.class
 
 # Outputs
@@ -8,3 +8,4 @@
 
 # editors 
 /.vscode
+/.metadata/

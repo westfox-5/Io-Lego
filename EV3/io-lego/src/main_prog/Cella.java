@@ -24,6 +24,10 @@ public class Cella {
         this.isHere = false;
     }
 
+    public boolean isCorrectColor(Colors c) {
+    	return this.color==c;
+    }
+    
     public boolean hasColor() {
         return this.color!=null;
     }

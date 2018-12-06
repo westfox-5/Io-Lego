@@ -1,29 +1,14 @@
 package main_prog;
 
-import java.io.BufferedReader;
 
-import java.io.IOException;
 
-import java.util.ArrayList;
-
-import lejos.hardware.Battery;
-import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;
-import lejos.hardware.motor.BaseRegulatedMotor;
-import lejos.hardware.motor.Motor;
-import lejos.hardware.motor.NXTRegulatedMotor;
-import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3ColorSensor;
-import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
-import lejos.hardware.sensor.SensorMode;
 
 import lejos.robotics.SampleProvider;
-import lejos.robotics.navigation.Move;
-import lejos.utility.Delay;
 
 import main_prog.AllThreads;
-import main_prog.RobotBlockedException;
 
 public class main_p {
 
@@ -36,19 +21,14 @@ public class main_p {
 	private final static int COLS = 4;
 	private final static double DEFAULT_DISTANCE = 0.1;
 
-	private static Boolean run=true;
-
 	private static BluetoothConnector bt;
 
 	private static Cella[][] campo;
 	private static RotationMonitor monitor;
 	
-	private static Port S2;
-	private static Port S4;
 	private static EV3ColorSensor colorSensor;
 	private static EV3UltrasonicSensor uSensor;
 	private static SampleProvider distanceProvider;
-	private static char letto;
 	private static int x;
 	private static int y;
 
@@ -166,7 +146,7 @@ public class main_p {
 		float [] sample = new float[distanceProvider.sampleSize()];
 		distanceProvider.fetchSample(sample, 0);
 		
-		if(sample[0]!=defaultDistance) {
+		if(sample[0]!=DEFAULT_DISTANCE) {
 			return true;
 		}
 			
@@ -331,23 +311,23 @@ public class main_p {
 				LCD.drawString("BT connected",1,1);
 			break;
 			case PARSE: 
-				LCD.clear(0,4);
-				LCD.drawString("Receiving data");
+				LCD.clear(0,4,20);
+				LCD.drawString("Receiving data",0,4);
 				break;
 			case MOVE: 
-				LCD.clear(0,4);
-				LCD.clear(0,5);
+				LCD.clear(0,4,20);
+				LCD.clear(0,5,20);
 				LCD.drawString("next:",0,4);
 				LCD.drawString("X: "+x +" Y: "+y,0,5);
 				break;
 			case CHECK_COL: 
-				LCD.clear(0,4);
-				LCD.clear(0,5);
+				LCD.clear(0,4,20);
+				LCD.clear(0,5,20);
 				LCD.drawString("Sending color...",0,4);
 				break;
 			case END: 
-				LCD.clear(0,4);
-				LCD.clear(0,5);
+				LCD.clear(0,4,20);
+				LCD.clear(0,5,20);
 				LCD.drawString("Finish!",0,4);
 		}
 	}
@@ -374,7 +354,6 @@ public class main_p {
 		print(Prints.PARSE, 0,0);
 		parseInput();
 
-		Colors colorControl;
 		for(int i =0; i<ROWS; i++) {
 			for(int j =0; j<COLS; j++) {
 
@@ -388,7 +367,7 @@ public class main_p {
 					// si invia il colore all' app android e si andrebbe a controllare l'altro colore
 
 					print(Prints.CHECK_COL, 0, 0);
-					bt.sendColor( checkColor() );
+					bt.sendColor( i, j, campo[i][j].isCorrectColor( checkColor() ) );
 				}
 			}
 		}

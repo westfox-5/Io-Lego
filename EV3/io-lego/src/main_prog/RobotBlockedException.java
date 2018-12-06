@@ -1,8 +1,8 @@
 package main_prog;
 
 class RobotBlockedException extends Exception{
-    @Override
-    public String toString() {
-        return "Robot blocked exception";
-    }
-}
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;}

@@ -1,6 +1,5 @@
 package main_prog;
 
-import lejos.hardware.lcd.LCD;
 import main_prog.main_p.Directions;
 
 public class RotationMonitor {
