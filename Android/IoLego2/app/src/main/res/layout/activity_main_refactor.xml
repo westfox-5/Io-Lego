@@ -102,7 +102,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight=".2"
+            android:layout_weight=".25"
             android:orientation="horizontal">
 
             <ImageButton
@@ -149,24 +149,13 @@
 
                 />
 
-            <ImageButton
-                android:id="@+id/b04"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor" />
 
         </LinearLayout>
-
-
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight=".2"
+            android:layout_weight=".25"
             android:orientation="horizontal">
 
             <ImageButton
@@ -213,23 +202,13 @@
 
                 />
 
-            <ImageButton
-                android:id="@+id/b14"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor" />
 
         </LinearLayout>
-
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight=".2"
+            android:layout_weight=".25"
             android:orientation="horizontal">
 
             <ImageButton
@@ -276,22 +255,14 @@
 
                 />
 
-            <ImageButton
-                android:id="@+id/b24"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor" />
+
 
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight=".2"
+            android:layout_weight=".25"
             android:orientation="horizontal">
 
             <ImageButton
@@ -334,77 +305,6 @@
                 android:gravity="center"
                 android:onClick="chooseColor" />
 
-            <ImageButton
-                android:id="@+id/b34"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight=".2"
-            android:orientation="horizontal">
-
-            <ImageButton
-                android:id="@+id/b40"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor" />
-
-            <ImageButton
-                android:id="@+id/b41"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor" />
-
-            <ImageButton
-                android:id="@+id/b42"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor"
-                />
-
-            <ImageButton
-                android:id="@+id/b43"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor"
-
-                />
-
-            <ImageButton
-                android:id="@+id/b44"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_margin="5dp"
-                android:layout_weight=".20"
-                android:background="@color/light_grey"
-                android:gravity="center"
-                android:onClick="chooseColor"
-
-                />
         </LinearLayout>
 
     </LinearLayout>

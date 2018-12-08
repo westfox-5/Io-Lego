@@ -5,7 +5,7 @@ import lejos.hardware.motor.Motor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.robotics.SampleProvider;
-import main_prog.main_p.Directions;
+import main_prog.MainProgram.Direction;
 
 public class AllThreads {
 	
@@ -42,19 +42,17 @@ public class AllThreads {
 
 	static class Rotate implements Runnable {
 		private RotationMonitor m;
-		private Directions dir;
+		private Direction dir;
 
-		public Rotate(RotationMonitor m, Directions dir) {
+		public Rotate(RotationMonitor m, Direction dir) {
 			this.m = m;
 			this.dir = dir;	
 		}
 		
 		public void run() {
-			while(this.m.gira(this.dir) == -1) {}
+			while(this.m.rotate(this.dir) == -1) {}
 		}
 	}
-	
-
 	
 	static Runnable A_rotation_forward = new Runnable() {
 		
@@ -111,6 +109,7 @@ public class AllThreads {
 			
 		}
 	};
+	
 	static Runnable D_start = new Runnable() {
 		
 		@Override
@@ -129,7 +128,6 @@ public class AllThreads {
 			
 		}
 	};
-	
 	
 	static Runnable A_color_forward = new Runnable() {
 		
@@ -157,6 +155,7 @@ public class AllThreads {
 		Motor.A.rotate(-ROTATION_CHECK_COLOR);
 		}
 	};
+	
 	static Runnable B_color_backward = new Runnable() {
 		
 		

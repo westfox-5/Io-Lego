@@ -44,13 +44,8 @@ public class BluetoothConnection extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        // chiudi tutto
         MAC_ADDRESS = null;
         return super.onUnbind(intent);
-    }
-
-    boolean isConnected() {
-        return this.socket.isConnected();
     }
 
     int connect() throws IOException {
@@ -103,7 +98,6 @@ public class BluetoothConnection extends Service {
         }
         return null;
     }
-
 
     public void send(String str) throws IOException {
         Log.d("stringa", str);

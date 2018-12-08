@@ -1,13 +1,13 @@
 package main_prog;
 
-import main_prog.main_p.Colors;
+import main_prog.MainProgram.Color;
 
-public class Cella {
+public class Cell {
 
-    private Colors color;
+    private Color color;
     public boolean isHere;
 
-    public Cella(){
+    public Cell(){
         this.color = null;
         this.isHere = false;
     }
@@ -16,7 +16,7 @@ public class Cella {
         this.isHere= true;
     }
 
-    public void setColor(Colors c){
+    public void setColor(Color c){
         this.color=c;
     }
 
@@ -24,7 +24,7 @@ public class Cella {
         this.isHere = false;
     }
 
-    public boolean isCorrectColor(Colors c) {
+    public boolean isCorrectColor(Color c) {
     	return this.color==c;
     }
     

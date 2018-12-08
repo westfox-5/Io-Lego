@@ -3,6 +3,7 @@ package main_prog;
 import java.io.IOException;
 
 import lejos.hardware.Battery;
+import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
@@ -10,27 +11,26 @@ import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 import main_prog.AllThreads;
 
-public class main_p {
+public class MainProgram {
 
-	enum Colors 	{ NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK }
-	enum Prints 	{ START, BT_CONN, MOVE, CHECK_COL, END }
-	enum Directions { UP, DOWN, LEFT, RIGHT	}
+	enum Color 	{ NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK }
+	enum Print 	{ START, BT_CONN, MOVE, CHECK_COL, END }
+	enum Direction { UP, DOWN, LEFT, RIGHT	}
 
 
-	private final static int	BATTERY_TIMEOUT = 60;
-	private final static int 	ROWS = 5;
-	private final static int 	COLS = 4;
+	private final static int	
+		BATTERY_TIMEOUT = 60,
+		ROWS = 5,
+		COLS = 4;
 	private final static double DEFAULT_DISTANCE = 0.1;
 	private final static String END_STRING = "999";
 
 
-
-	private static Cella[][] campo;
-	private static RotationMonitor monitor;
+	private static Cell[][] campo;
+	private static RotationMonitor rotationMonitor;
 	
 	private static EV3ColorSensor 		colorSensor;
 	private static EV3UltrasonicSensor 	uSensor;
-	private static SampleProvider 		distanceProvider;
 	private static int x;
 	private static int y;
 
@@ -41,18 +41,18 @@ public class main_p {
 
 			campo[x][y].reset();
 			if(tmp > 0){ // DEVO ANDARE GIU
-				if(checkObstacle(Directions.DOWN)){
-					x = crossObstacle(Directions.DOWN);
+				if(checkObstacle(Direction.DOWN)){
+					x = crossObstacle(Direction.DOWN);
 				}else{
-					moveRobot(Directions.DOWN);
+					moveRobot(Direction.DOWN);
 					x++;
 				}	
 			}
 			else if(tmp < 0){ //DEVO ANDARE SU
-				if(checkObstacle(Directions.UP)){
-					x= crossObstacle(Directions.UP);
+				if(checkObstacle(Direction.UP)){
+					x= crossObstacle(Direction.UP);
 				}else{
-					moveRobot(Directions.UP);
+					moveRobot(Direction.UP);
 					x--;	
 				}
 			}
@@ -65,18 +65,18 @@ public class main_p {
 
 			campo[x][y].reset();
 			if(tmp > 0){ // DEVO ANDARE A DESTRA
-				if(checkObstacle(Directions.RIGHT)){
-					y = crossObstacle(Directions.RIGHT);					
+				if(checkObstacle(Direction.RIGHT)){
+					y = crossObstacle(Direction.RIGHT);					
 				}else{
-					moveRobot(Directions.RIGHT);
+					moveRobot(Direction.RIGHT);
 					y++;
 				}
 			}
 			else if(tmp < 0){// DEVO ANDARE A SINISTRA
-				if(checkObstacle(Directions.LEFT)){
-					y= crossObstacle(Directions.LEFT);
+				if(checkObstacle(Direction.LEFT)){
+					y= crossObstacle(Direction.LEFT);
 				}else{
-					moveRobot(Directions.LEFT);
+					moveRobot(Direction.LEFT);
 					y--;	
 				}
 			}
@@ -86,14 +86,14 @@ public class main_p {
 		
 	}
 	
-	public static Colors checkColor() {
+	public static Color checkColor() {
 		// inizializzo variabili per la porta
 		
 		SampleProvider colorProvider;
 		colorProvider=colorSensor.getRGBMode();
 		float[] colorSample;
 		int r,g,b;
-		Colors currentColor= Colors.NOT_FOUND;
+		Color currentColor= Color.NOT_FOUND;
 		colorSample =new float[colorProvider.sampleSize()];
 			
 		colorProvider.fetchSample(colorSample, 0);
@@ -113,7 +113,7 @@ public class main_p {
 			e.printStackTrace();
 		}
 		
-		while(currentColor == Colors.NOT_FOUND) {
+		while(currentColor == Color.NOT_FOUND) {
 			currentColor= ColorsRGB.getColor(r, g, b);
 		}
 		
@@ -131,9 +131,9 @@ public class main_p {
 		return currentColor;
 	}
 	
-	private static boolean checkObstacle(Directions dir) {
+	private static boolean checkObstacle(Direction dir) {
 
-		Thread rotate= new Thread( new AllThreads.Rotate(monitor, dir) );
+		Thread rotate= new Thread( new AllThreads.Rotate(rotationMonitor, dir) );
 		rotate.start();
 		
 		try {
@@ -143,7 +143,7 @@ public class main_p {
 			e.printStackTrace();
 		}
 
-		distanceProvider=uSensor.getDistanceMode();
+		SampleProvider distanceProvider=uSensor.getDistanceMode();
 		
 		float [] sample = new float[distanceProvider.sampleSize()];
 		distanceProvider.fetchSample(sample, 0);
@@ -155,15 +155,14 @@ public class main_p {
 		return false; 
 	}
 	
-
 	// ritorna la riga o colonna dove va il robot
 	// va nella cella immediatamente successiva all'ostacolo secondo la direzione.
 	// se ostacolo si trova sul bordo, va sempre sulla cella sopra o a destra.
-	private static int crossObstacle(Directions dir){ 
+	private static int crossObstacle(Direction dir){ 
 		
 		// calcola la cella finale dove arrivare
-		int final_x = dir==Directions.DOWN  ? x+2 : dir==Directions.UP   ? x-2 : x;
-		int final_y = dir==Directions.RIGHT ? y+2 : dir==Directions.LEFT ? y-2 : y;
+		int final_x = dir==Direction.DOWN  ? x+2 : dir==Direction.UP   ? x-2 : x;
+		int final_y = dir==Direction.RIGHT ? y+2 : dir==Direction.LEFT ? y-2 : y;
 
 		// controllo casi di ostacolo sul bordo
 		if( final_x < 0 ) 	{ final_x = 0;		final_y++; }
@@ -179,19 +178,19 @@ public class main_p {
 			case UP:
 				// se puoi vai a destra
 				if(y<COLS-1){
-					if(checkObstacle(Directions.RIGHT)){
-						y= crossObstacle(Directions.RIGHT);
+					if(checkObstacle(Direction.RIGHT)){
+						y= crossObstacle(Direction.RIGHT);
 					}else{
-						moveRobot(Directions.RIGHT);
+						moveRobot(Direction.RIGHT);
 						y--;	
 					}
 				}
 				// altrimenti vai a sinistra
 				else{
-					if(checkObstacle(Directions.LEFT)){
-						y= crossObstacle(Directions.LEFT);
+					if(checkObstacle(Direction.LEFT)){
+						y= crossObstacle(Direction.LEFT);
 					}else{
-						moveRobot(Directions.LEFT);
+						moveRobot(Direction.LEFT);
 						y--;	
 					}
 				}
@@ -201,19 +200,19 @@ public class main_p {
 			case LEFT:
 				// se puoi vai giu
 				if(x<ROWS-1){
-					if(checkObstacle(Directions.DOWN)){
-						y= crossObstacle(Directions.DOWN);
+					if(checkObstacle(Direction.DOWN)){
+						y= crossObstacle(Direction.DOWN);
 					}else{
-						moveRobot(Directions.DOWN);
+						moveRobot(Direction.DOWN);
 						y--;	
 					}
 				}
 				// altrimenti vai su
 				else{
-					if(checkObstacle(Directions.UP)){
-						y= crossObstacle(Directions.UP);
+					if(checkObstacle(Direction.UP)){
+						y= crossObstacle(Direction.UP);
 					}else{
-						moveRobot(Directions.UP);
+						moveRobot(Direction.UP);
 						y--;	
 					}
 				}
@@ -233,13 +232,13 @@ public class main_p {
 
 		// ritornare la x se è andato a right/left
 		// ritornare la y se è andato a down/up
-		return dir==Directions.DOWN||dir==Directions.UP ? final_y: final_x;
+		return dir==Direction.DOWN||dir==Direction.UP ? final_y: final_x;
 
 	}
 	
-	private static void moveRobot(Directions dir) {
+	private static void moveRobot(Direction dir) {
 			
-		Thread rotate= new Thread( new AllThreads.Rotate(monitor, dir) );
+		Thread rotate= new Thread( new AllThreads.Rotate(rotationMonitor, dir) );
 		Thread nextCellA= new Thread( AllThreads.A_next_cell);
 		Thread nextCellB= new Thread( AllThreads.B_next_cell);
 
@@ -295,19 +294,19 @@ public class main_p {
 						int xt=	Integer.parseInt( t.substring(0,1) );
 						int yt=	Integer.parseInt( t.substring(1,2) );
 						int c=	Integer.parseInt( t.substring(2,3) );
-						Colors col;
+						Color col;
 						switch(c) {
 							case 1:
-								col = Colors.YELLOW;
+								col = Color.YELLOW;
 								break;
 							case 2:
-								col= Colors.BLUE;
+								col= Color.BLUE;
 								break;
 							case 3:
-								col= Colors.GREEN;
+								col= Color.GREEN;
 								break;
 							case 4:
-								col= Colors.RED;
+								col= Color.RED;
 								break;
 							default: 
 								col= null;
@@ -326,13 +325,11 @@ public class main_p {
 		new Thread(AllThreads.B_stop).start();
 	}
 	
-	
 	private static void sendBatteryInfo(final BluetoothConnector bt) {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				while(true) {
-					
 					try {
 						bt.send(String.valueOf((int)Battery.getVoltage())+"#");
 						Thread.sleep(BATTERY_TIMEOUT*1000);
@@ -345,8 +342,7 @@ public class main_p {
 		}).start();
 	}
 	
-	
-	private static void print(Prints info, int x, int y) {
+	private static void print(Print info, int x, int y) {
 		switch(info) {
 			case START: 
 				LCD.clear();
@@ -374,20 +370,26 @@ public class main_p {
 	}
 
 	public static void main(String[] args) {
-		campo= new Cella[ROWS][COLS];
+		campo= new Cell[ROWS][COLS];
 		for(int i=0; i<ROWS; i++){
-			campo[i]= new Cella[COLS];
+			campo[i]= new Cell[COLS];
 			for(int j=0; j<COLS; j++){
-				campo[i][j]= new Cella();
+				campo[i][j]= new Cell();
 			}
 		}
 		
 		x=0;
 		y=0;		
 		campo[x][y].setPosition();
+/*		
+		rotationMonitor = new RotationMonitor();
+		new Thread( new AllThreads.Gyro(rotationMonitor) ).start();
 		
+		uSensor = new EV3UltrasonicSensor(LocalEV3.get().getPort("S2"));
+		colorSensor = new EV3ColorSensor(LocalEV3.get().getPort("S4"));
+*/
 		final BluetoothConnector bt = new BluetoothConnector();
-		print(Prints.BT_CONN,0,0);
+		print(Print.BT_CONN,0,0);
 		
 		
 		// send battery status periodically
@@ -429,6 +431,8 @@ public class main_p {
 		bt.send("999&");
 		
 		*/
+	
+		
 		
 		try {
 			bt.send("001&");
@@ -459,8 +463,7 @@ public class main_p {
 		*/
 		// inizializzazione sensore ultrasuoni
 		/*
-		S2  = LocalEV3.get().getPort("S2");
-		uSensor = new EV3UltrasonicSensor(S2);
+		S2  = 
 		distanceProvider=uSensor.getDistanceMode();
 		float d;
 		*/

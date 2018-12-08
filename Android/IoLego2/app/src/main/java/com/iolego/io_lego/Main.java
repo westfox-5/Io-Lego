@@ -24,45 +24,57 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "IO-LEGO_ACTIVITY";
-    private static final String TAG_COLOR = "COLOR";
+public class Main extends AppCompatActivity {
+    private static final String
+            TAG = "IO-LEGO_ACTIVITY",
+            TAG_COLOR = "COLOR";
 
-    private static final int VOLTAGE_LOW = 3;
-    private static final int VOLTAGE_MIDDLE = 6;
+    private static final int
+            VOLTAGE_LOW = 3,
+            VOLTAGE_MIDDLE = 6,
+            ROWS = 5,
+            COLS = 4;
 
-    private int numberOfCells;
-    private int checkedCells;
 
     private ImageButton b;
-    private Button btn;
+    private Button btnMain;
     private ImageView bluetoothImage, batteryImage;
     private View progressLayout;
-    private int map[][], x, y;
+    private int map[][], x, y, checkedCells;
     public Dialog colorChooseDialog, reconnectDialog;
     private ProgressBar bar;
 
-    private boolean bluetoothBound = false, searching = false, btConnected = true;
+    private boolean
+            bluetoothBound = false,
+            searching = false,
+            btConnected = true;
+
     private BluetoothConnection bt;
-    private Handler reconnectHandler, progressBarHandler, imageHandler, btHandler;
-    int []imageArray={R.drawable.ic_bluetooth_disabled_black,R.drawable.ic_bluetooth_disabled};
+    private Handler
+            reconnectHandler,
+            progressBarHandler,
+            imageHandler,
+            btHandler;
 
-    final Runnable runnable = new Runnable() {
+    int[] BTimageArray = {R.drawable.ic_bluetooth_disabled_black, R.drawable.ic_bluetooth_disabled};
 
-        int i=0;
+    private final Runnable changeBTImage = new Runnable() {
+
+        int i = 0;
+
         public void run() {
-            bluetoothImage.setImageResource(imageArray[i]);
+            bluetoothImage.setImageResource(BTimageArray[i]);
             i++;
-            if(i>imageArray.length-1)
-            {
-                i=0;
+            if (i > BTimageArray.length - 1) {
+                i = 0;
             }
             btHandler.postDelayed(this, 1000);  //for interval...
         }
     };
 
-    private ServiceConnection btServ = new ServiceConnection() {
+    private ServiceConnection btService = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             BluetoothConnection.BluetoothBinder binder = (BluetoothConnection.BluetoothBinder) iBinder;
@@ -86,19 +98,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_refactor);
 
-        Intent btIntet = new Intent(this, BluetoothConnection.class);
-        startService(btIntet);
-        bindService(btIntet, btServ, Context.BIND_AUTO_CREATE);
+        Intent btIntent = new Intent(this, BluetoothConnection.class);
+        startService(btIntent);
+        bindService(btIntent, btService, Context.BIND_AUTO_CREATE);
 
         /* reconnect dialog creation */
         reconnectDialog = new Dialog(this);
         reconnectDialog.setContentView(R.layout.reconnect);
-        reconnectDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        Objects.requireNonNull(reconnectDialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         /* choose color creation */
         colorChooseDialog = new Dialog(this);
         colorChooseDialog.setContentView(R.layout.choose_color);
-        colorChooseDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        Objects.requireNonNull(colorChooseDialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         /* handlers*/
         reconnectHandler = new Handler();
@@ -112,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
         batteryImage = findViewById(R.id.batteryImg);
         progressLayout = findViewById(R.id.relProgbar);
         progressLayout.setVisibility(View.INVISIBLE);
-        btn = findViewById(R.id.startBtn);
+        btnMain = findViewById(R.id.startBtn);
 
         map = new int[5][5];
         for (int i = 0; i < 5; i++) {
@@ -121,19 +133,19 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        btn.setOnClickListener(new View.OnClickListener() {
+        btnMain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(bluetoothBound) {
-                   if(btConnected) {
-                       if (searching) {
-                           stopSearch();
-                       } else {
-                           startSearch();
-                       }
-                       searching= !searching;
-                   } else{
-                       Log.e(TAG,"BT not connected");
+                if (bluetoothBound) {
+                    if (btConnected) {
+                        if (searching) {
+                            stopSearch();
+                        } else {
+                            startSearch();
+                        }
+                        searching = !searching;
+                    } else {
+                        Log.e(TAG, "BT not connected");
                     }
                 }
             }
@@ -148,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
-
 
     public void chooseColor(View view) {
         b = (ImageButton) view;
@@ -195,13 +206,13 @@ public class MainActivity extends AppCompatActivity {
         colorChooseDialog.hide();
     }
 
-    public void startSearch() {
-        numberOfCells = 0;
+    private void startSearch() {
+        int numberOfCells = 0;
         String message = "";
 
-        /* change btn */
-        btn.setText(getResources().getString(R.string.break_search));
-        btn.setBackgroundColor(getResources().getColor(R.color.red));
+        /* change btnMain */
+        btnMain.setText(getResources().getString(R.string.break_search));
+        btnMain.setBackgroundColor(getResources().getColor(R.color.red));
 
         /* create the string as ROW|COL|COLOR|& */
         for (int i = 0; i < 5; i++) {
@@ -235,10 +246,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void stopSearch() {
-        /* change btn */
-        btn.setText(getResources().getString(R.string.start_search));
-        btn.setBackgroundColor(getResources().getColor(R.color.green));
+    private void stopSearch() {
+        /* change btnMain */
+        btnMain.setText(getResources().getString(R.string.start_search));
+        btnMain.setBackgroundColor(getResources().getColor(R.color.green));
 
 
         try {
@@ -251,7 +262,6 @@ public class MainActivity extends AppCompatActivity {
             btConnected = false;
         }
     }
-
 
     private void read() {
         new Thread(
@@ -267,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
 
                                     if (message.charAt(1) == '#') {
 
-                                        Log.d(TAG, "Received battery info: "+message);
+                                        Log.d(TAG, "Received battery info: " + message);
                                         setBatteryIcon(Integer.parseInt(message.substring(0, 1)));
 
                                     } else if (message.charAt(3) == '&') {
@@ -276,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
                                         if (message.equals("999&")) {
                                             Log.d(TAG, "Search terminated");
                                         } else {
-                                            Log.d(TAG, "Received cell info: "+message);
+                                            Log.d(TAG, "Received cell info: " + message);
                                             setChecked(Integer.parseInt(message.substring(0, 1)),
                                                     Integer.parseInt(message.substring(1, 2)),
                                                     Integer.parseInt(message.substring(2, 3)) == 1);
@@ -360,16 +370,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void reconnect() {
 
-        btHandler.removeCallbacks(runnable);
-        btHandler.post(runnable); //for initial delay..
-
+        btHandler.removeCallbacks(changeBTImage);
+        btHandler.post(changeBTImage); //for initial delay..
 
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.e("LOL","CONNECTION??");
-
                 int ris;
                 try {
                     ris = bt.connect();
@@ -388,12 +395,15 @@ public class MainActivity extends AppCompatActivity {
                                 bluetoothImage.setImageDrawable(getDrawable(R.drawable.ic_bluetooth_connected));
                             }
                         });
+                        btHandler.removeCallbacks(changeBTImage);
 
                         read();
 
                         break;
-                    default: break;
-                } }
+                    default:
+                        break;
+                }
+            }
         }).start();
 
     }
@@ -414,7 +424,7 @@ public class MainActivity extends AppCompatActivity {
         build.setPositiveButton("YES", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                MainActivity.this.finish();
+                Main.this.finish();
             }
         });
         build.setNegativeButton("NO", new DialogInterface.OnClickListener() {
@@ -429,8 +439,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if (btServ != null) {
-            unbindService(btServ);
+        if (btService != null) {
+            unbindService(btService);
         }
         super.onDestroy();
     }

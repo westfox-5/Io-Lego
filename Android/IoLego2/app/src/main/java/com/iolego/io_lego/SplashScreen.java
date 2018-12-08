@@ -22,22 +22,19 @@ import android.widget.Toast;
 
 import java.io.IOException;
 
-public class SplashActivity extends AppCompatActivity {
+public class SplashScreen extends AppCompatActivity {
     private static final String TAG= "SPLASH_ACTIVITY";
 
     private BluetoothConnection bt;
     private Dialog reconnectDialog;
-    private TextView btConnectionTXT;
+    private TextView btConnTXT;
     private ProgressBar bar;
     private Handler barHandler;
-
-    private boolean bluetoothBound = false;
-
 
     private Runnable hide_bar = new Runnable() {
         @Override
         public void run() {
-            bar.setVisibility(View.INVISIBLE);
+            bar.setVisibility(View.GONE);
         }
     };
 
@@ -52,12 +49,11 @@ public class SplashActivity extends AppCompatActivity {
 
 
 
-    private ServiceConnection btServ = new ServiceConnection() {
+    private ServiceConnection btService = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             BluetoothConnection.BluetoothBinder binder = (BluetoothConnection.BluetoothBinder)iBinder;
 
-            bluetoothBound = true;
             bt = binder.getService();
 
             barHandler.post( show_bar );
@@ -73,7 +69,6 @@ public class SplashActivity extends AppCompatActivity {
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            bluetoothBound = false;
 
         }
     };
@@ -84,7 +79,7 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.startup);
 
-        btConnectionTXT = findViewById(R.id.connectTXT);
+        btConnTXT = findViewById(R.id.connectTXT);
         bar = findViewById(R.id.progressBar);
 
         barHandler = new Handler();
@@ -93,7 +88,7 @@ public class SplashActivity extends AppCompatActivity {
 
         Intent btIntet = new Intent(this, BluetoothConnection.class);
         startService(btIntet);
-        bindService(btIntet, btServ, Context.BIND_AUTO_CREATE);
+        bindService(btIntet, btService, Context.BIND_AUTO_CREATE);
 
 
     }
@@ -110,10 +105,10 @@ public class SplashActivity extends AppCompatActivity {
 
             case 0: // connesso
                 Log.d(TAG,"Connection established");
-                btConnectionTXT.post(new Runnable() {
+                btConnTXT.post(new Runnable() {
                     @Override
                     public void run() {
-                        btConnectionTXT.setText(getResources().getString(R.string.bt_connected));
+                        btConnTXT.setText(getResources().getString(R.string.bt_connected));
                     }
                 });
 
@@ -123,10 +118,10 @@ public class SplashActivity extends AppCompatActivity {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        Intent i = new Intent(getApplicationContext(), MainActivity.class);
+                        Intent i = new Intent(getApplicationContext(), Main.class);
                         startActivity(i);
 
-                        SplashActivity.this.finish();
+                        SplashScreen.this.finish();
                         overridePendingTransition(R.anim.slide_left,R.anim.slide_right);
 
                     }
@@ -143,10 +138,10 @@ public class SplashActivity extends AppCompatActivity {
                 reconnectDialog.show();
                 break;
             case 2: // bt non acceso
-                btConnectionTXT.post(new Runnable() {
+                btConnTXT.post(new Runnable() {
                     @Override
                     public void run() {
-                        btConnectionTXT.setText(getResources().getString(R.string.bt_not_enable));
+                        btConnTXT.setText(getResources().getString(R.string.bt_not_enable));
                     }
                 });
 
@@ -157,7 +152,6 @@ public class SplashActivity extends AppCompatActivity {
                 break;
         }
     }
-
 
     private AlertDialog createDialog() {
         AlertDialog.Builder build;
@@ -207,7 +201,7 @@ public class SplashActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode==0) {
             Toast.makeText(this, getResources().getString(R.string.bt_enable), Toast.LENGTH_SHORT).show();
-            btConnectionTXT.setText(R.string.bt_pairing);
+            btConnTXT.setText(R.string.bt_pairing);
             reconnectDialog.show();
         } else {
             Toast.makeText(this, getResources().getString(R.string.bt_error), Toast.LENGTH_SHORT).show();
@@ -215,10 +209,10 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStop() {
-        if(btServ!=null) {
-            unbindService(btServ);
+    protected void onDestroy() {
+        if(btService !=null) {
+            unbindService(btService);
         }
-        super.onStop();
+        super.onDestroy();
     }
 }

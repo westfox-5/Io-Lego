@@ -1,16 +1,14 @@
 package main_prog;
 
-import main_prog.main_p.Directions;
+import main_prog.MainProgram.Direction;
 
 public class RotationMonitor {
 	private int angle;
 	private boolean set;
 
-	
 	RotationMonitor(){
 		this.angle=0;
 	}
-	
 	
 	public synchronized void setAngle(int a) {
 		angle = (a + 360 ) %360;
@@ -18,8 +16,7 @@ public class RotationMonitor {
 		notify();
 	}
 	
-	
-	public synchronized int gira(Directions dir) {
+	public synchronized int rotate(Direction dir) {
 		Thread[] gira_destra = new Thread[2];
 		gira_destra[0] = new Thread(AllThreads.A_rotation_forward);
 		gira_destra[1] = new Thread(AllThreads.B_rotation_backward);
