@@ -416,9 +416,10 @@
         android:layout_margin="7dp"
         android:id="@+id/startBtn"
         android:layout_weight="0.1"
+        android:background="@color/green"
 
-        android:onClick="startSearch"
-        android:text="START SEARCH"
+        android:text="@string/start_search"
+        android:textAllCaps="true"
 
         app:layout_constraintTop_toBottomOf="@id/grid"
         app:layout_constraintBottom_toBottomOf="parent"

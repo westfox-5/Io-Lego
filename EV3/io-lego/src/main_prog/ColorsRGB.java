@@ -4,10 +4,10 @@ import main_prog.main_p.Colors;
 
 public class ColorsRGB {
 	
-	private static int[] R= {200, 90, 90};
-	private static int[] G= {80, 100, 80};
-	private static int[] B= {80, 80, 100};
-	private static int[] Y= {200, 100, 70};
+	private static int[] R=		{200, 90, 90};
+	private static int[] G= 	{80, 100, 80};
+	private static int[] B= 	{80, 80, 100};
+	private static int[] Y= 	{200, 100, 70};
 	private static int[] BLACK= {15,15,15};
 	
 	

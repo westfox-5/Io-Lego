@@ -1,34 +1,36 @@
 package main_prog;
 
+import java.io.IOException;
 
-
+import lejos.hardware.Battery;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
-
 import lejos.robotics.SampleProvider;
-
+import lejos.utility.Delay;
 import main_prog.AllThreads;
 
 public class main_p {
 
-	enum Prints { START, PARSE, BT_CONN, MOVE, CHECK_COL, END }
+	enum Colors 	{ NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK }
+	enum Prints 	{ START, BT_CONN, MOVE, CHECK_COL, END }
 	enum Directions { UP, DOWN, LEFT, RIGHT	}
-	enum Colors { NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK }
 
 
-	private final static int ROWS = 5;
-	private final static int COLS = 4;
+	private final static int	BATTERY_TIMEOUT = 60;
+	private final static int 	ROWS = 5;
+	private final static int 	COLS = 4;
 	private final static double DEFAULT_DISTANCE = 0.1;
+	private final static String END_STRING = "999";
 
-	private static BluetoothConnector bt;
+
 
 	private static Cella[][] campo;
 	private static RotationMonitor monitor;
 	
-	private static EV3ColorSensor colorSensor;
-	private static EV3UltrasonicSensor uSensor;
-	private static SampleProvider distanceProvider;
+	private static EV3ColorSensor 		colorSensor;
+	private static EV3UltrasonicSensor 	uSensor;
+	private static SampleProvider 		distanceProvider;
 	private static int x;
 	private static int y;
 
@@ -38,7 +40,7 @@ public class main_p {
 		while(tmp != 0){
 
 			campo[x][y].reset();
-			if(tmp > 0){ // DEVO ANDARE DOWN
+			if(tmp > 0){ // DEVO ANDARE GIU
 				if(checkObstacle(Directions.DOWN)){
 					x = crossObstacle(Directions.DOWN);
 				}else{
@@ -46,7 +48,7 @@ public class main_p {
 					x++;
 				}	
 			}
-			else if(tmp < 0){ //DEVO ANDARE UP
+			else if(tmp < 0){ //DEVO ANDARE SU
 				if(checkObstacle(Directions.UP)){
 					x= crossObstacle(Directions.UP);
 				}else{
@@ -62,7 +64,7 @@ public class main_p {
 		while(tmp != 0){
 
 			campo[x][y].reset();
-			if(tmp > 0){ // DEVO ANDARE A RIGHT
+			if(tmp > 0){ // DEVO ANDARE A DESTRA
 				if(checkObstacle(Directions.RIGHT)){
 					y = crossObstacle(Directions.RIGHT);					
 				}else{
@@ -70,7 +72,7 @@ public class main_p {
 					y++;
 				}
 			}
-			else if(tmp < 0){// DEVO ANDARE A LEFT
+			else if(tmp < 0){// DEVO ANDARE A SINISTRA
 				if(checkObstacle(Directions.LEFT)){
 					y= crossObstacle(Directions.LEFT);
 				}else{
@@ -149,20 +151,14 @@ public class main_p {
 		if(sample[0]!=DEFAULT_DISTANCE) {
 			return true;
 		}
-			
+
 		return false; 
 	}
 	
-	// ritorna il numero di riga o colonna dove è arrivato il robot
-	/*
-		DOWN 				      UP		   RIGHT		   LEFT	
-		|R| |          |1|2|     |*| |        |R|*|           |*|R|
-		|*| |          |*|3|     |R| |        | | |		      | | |
-		| | |  return->|5|4|
-	*/
 
+	// ritorna la riga o colonna dove va il robot
 	// va nella cella immediatamente successiva all'ostacolo secondo la direzione.
-	// se ostacolo è sul bordo, va sempre sulla cella sopra o a destra.
+	// se ostacolo si trova sul bordo, va sempre sulla cella sopra o a destra.
 	private static int crossObstacle(Directions dir){ 
 		
 		// calcola la cella finale dove arrivare
@@ -270,50 +266,95 @@ public class main_p {
 		
 	}
 
-	public static boolean parseInput() {
-		String[] tokens = bt.parseInput();
-		if(tokens==null) return false;
-		for (String t : tokens) {
-			int xt=t.charAt(0)-'0';
-			int yt=t.charAt(1)-'0';
-			int color=t.charAt(2)-'0';
-			Colors col;
-			switch(color) {
-				case 1:
-					col = Colors.YELLOW;
-					break;
-				case 2:
-					col= Colors.BLUE;
-					break;
-				case 3:
-					col= Colors.GREEN;
-					break;
-				case 4:
-					col= Colors.RED;
-					break;
-				default: 
-					col= null;
-					break;
-			}
+	public static void readAndParse(final BluetoothConnector bt) {
+		
+		new Thread ( new Runnable() {
+			@Override
+			public void run() {
+				
+				while(true) {
 
-			campo[xt][yt].setColor(col);
-		}
-		return true;
+					String message;
+					try {
+						message = bt.read();
+						
+					} catch(IOException e) {
+						message = null;
+						
+					}
+					
+					if(message==null) continue;
+				
+					String[] tokens = message.split("&");
+					for (String t : tokens) {
+						if(t.equals(END_STRING)) {
+							stopSearch();
+							continue;
+						}
+						
+						int xt=	Integer.parseInt( t.substring(0,1) );
+						int yt=	Integer.parseInt( t.substring(1,2) );
+						int c=	Integer.parseInt( t.substring(2,3) );
+						Colors col;
+						switch(c) {
+							case 1:
+								col = Colors.YELLOW;
+								break;
+							case 2:
+								col= Colors.BLUE;
+								break;
+							case 3:
+								col= Colors.GREEN;
+								break;
+							case 4:
+								col= Colors.RED;
+								break;
+							default: 
+								col= null;
+								break;
+						}
+						campo[xt][yt].setColor(col);
+					}
+				}
+				
+			}
+		} ).start();
 	}
 
+	private static void stopSearch() {
+		new Thread(AllThreads.A_stop).start();
+		new Thread(AllThreads.B_stop).start();
+	}
+	
+	
+	private static void sendBatteryInfo(final BluetoothConnector bt) {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while(true) {
+					
+					try {
+						bt.send(String.valueOf((int)Battery.getVoltage())+"#");
+						Thread.sleep(BATTERY_TIMEOUT*1000);
+						
+					} catch(Exception e) {
+						
+					}
+				}
+			}
+		}).start();
+	}
+	
+	
 	private static void print(Prints info, int x, int y) {
 		switch(info) {
 			case START: 
 				LCD.clear();
-				LCD.drawString("IO - LEGO", 0,1);
+				LCD.drawString("IO - LEGO", 0,0);
 			break;
 			case BT_CONN: 
-				LCD.drawString("BT connected",1,1);
+				LCD.drawString("BT connected",0,2);
 			break;
-			case PARSE: 
-				LCD.clear(0,4,20);
-				LCD.drawString("Receiving data",0,4);
-				break;
 			case MOVE: 
 				LCD.clear(0,4,20);
 				LCD.clear(0,5,20);
@@ -332,7 +373,6 @@ public class main_p {
 		}
 	}
 
-
 	public static void main(String[] args) {
 		campo= new Cella[ROWS][COLS];
 		for(int i=0; i<ROWS; i++){
@@ -346,14 +386,20 @@ public class main_p {
 		y=0;		
 		campo[x][y].setPosition();
 		
-		BluetoothConnector bt = new BluetoothConnector();
+		final BluetoothConnector bt = new BluetoothConnector();
 		print(Prints.BT_CONN,0,0);
 		
-		bt.sendBatteryInfo();
-
-		print(Prints.PARSE, 0,0);
-		parseInput();
-
+		
+		// send battery status periodically
+		sendBatteryInfo(bt);
+		
+		// start thread for always listening at input from app
+		readAndParse(bt);
+		
+		
+		/*
+		
+		// start searching
 		for(int i =0; i<ROWS; i++) {
 			for(int j =0; j<COLS; j++) {
 
@@ -367,16 +413,34 @@ public class main_p {
 					// si invia il colore all' app android e si andrebbe a controllare l'altro colore
 
 					print(Prints.CHECK_COL, 0, 0);
-					bt.sendColor( i, j, campo[i][j].isCorrectColor( checkColor() ) );
+					
+					bt.send(new StringBuilder()
+									.append(x)
+									.append(y)
+									.append( campo[i][j].isCorrectColor( checkColor() ) ? 1 : 0)
+									.append('&')
+									.toString()
+								);
 				}
 			}
 		}
 
 		print(Prints.END, 0,0);
-		bt.sendCloseToken();
-
-	
-
+		bt.send("999&");
+		
+		*/
+		
+		try {
+			bt.send("001&");
+			Delay.msDelay(3000);
+			bt.send("030&");		
+			Delay.msDelay(3000);
+			bt.send("211&");		
+			Delay.msDelay(3000);
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+		
 		
 		
 //	Thread t = new Thread(AllThreads.D_start);
