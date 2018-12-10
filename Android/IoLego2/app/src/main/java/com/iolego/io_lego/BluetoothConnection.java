@@ -26,6 +26,7 @@ public class BluetoothConnection extends Service {
     private OutputStream outputStream;
     private InputStream inputStream;
     private BluetoothSocket socket;
+    private InputStreamReader inputReader;
 
 
     public class BluetoothBinder extends Binder {
@@ -59,6 +60,9 @@ public class BluetoothConnection extends Service {
                     outputStream = socket.getOutputStream();
                     inputStream = socket.getInputStream();
 
+                    inputReader = new InputStreamReader(inputStream);
+
+
                     return 0;
 
                 }else {
@@ -72,6 +76,8 @@ public class BluetoothConnection extends Service {
                         Log.w(TAG, "Device connected. MAC " + MAC_ADDRESS);
                         outputStream = socket.getOutputStream();
                         inputStream = socket.getInputStream();
+
+                        inputReader = new InputStreamReader(inputStream);
 
                         return 0;
 
@@ -106,12 +112,10 @@ public class BluetoothConnection extends Service {
     }
 
     String read() throws IOException {
-
-        InputStreamReader dataInputStream = new InputStreamReader(inputStream);
         int bytesRead;
         char[] buffer = new char[256];
 
-        bytesRead = dataInputStream.read(buffer, 0, 4);
+        bytesRead = inputReader.read(buffer, 0, 4);
         return new String(buffer, 0, bytesRead);
     }
 

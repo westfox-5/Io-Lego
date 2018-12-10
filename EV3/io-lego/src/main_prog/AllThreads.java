@@ -1,35 +1,28 @@
 package main_prog;
 
-import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.Motor;
-import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.robotics.SampleProvider;
 import main_prog.MainProgram.Direction;
 
 public class AllThreads {
 	
-	private static final int DEFAULT_ROTATION = 700;
-	private static final int ROTATION_SPEED = 100;
-	private static final int ROTATION_CHECK_COLOR  = 500;
+	private static final int DEFAULT_ROTATION = 470;
+	private static final int ROTATION_SPEED = 40;
+	private static final int DEFAULT_SPEED = 90;
+	private static final int ROTATION_CHECK_COLOR  = 300;
 	
 	static class Gyro implements Runnable {
 		private RotationMonitor m;
+		private SampleProvider sp;
 		
-		Port S3;
-		EV3GyroSensor sensor;
-
-		SampleProvider sp;
-		
-		public Gyro(RotationMonitor m) {
-			this.m = m;
-			S3  = LocalEV3.get().getPort("S3");
-			sensor = new EV3GyroSensor(S3);
-			
-			sp = sensor.getAngleMode();
+		public Gyro(EV3GyroSensor gyroSensor, RotationMonitor m) {
+			this.m = m;	
+			sp = gyroSensor.getAngleMode();
 		}
 		
 		public void run() {
+
 			while(true) {
 				/* legge giroscopio*/
 				float [] sample = new float[sp.sampleSize()];
@@ -134,7 +127,8 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.A.rotate(ROTATION_CHECK_COLOR);
+			Motor.A.setSpeed(DEFAULT_SPEED);
+			Motor.A.rotate(ROTATION_CHECK_COLOR);
 		}
 	};
 	
@@ -143,7 +137,8 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.B.rotate(ROTATION_CHECK_COLOR);
+			Motor.B.setSpeed(DEFAULT_SPEED);
+			Motor.B.rotate(ROTATION_CHECK_COLOR);
 		}
 	};
 	
@@ -152,7 +147,8 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.A.rotate(-ROTATION_CHECK_COLOR);
+			Motor.A.setSpeed(DEFAULT_SPEED);
+			Motor.A.rotate(-ROTATION_CHECK_COLOR);
 		}
 	};
 	
@@ -161,7 +157,8 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
-		Motor.B.rotate(-ROTATION_CHECK_COLOR);
+			Motor.B.setSpeed(DEFAULT_SPEED);
+			Motor.B.rotate(-ROTATION_CHECK_COLOR);
 		}
 	};
 
@@ -169,6 +166,7 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
+			Motor.A.setSpeed(DEFAULT_SPEED);
 			Motor.A.rotate(DEFAULT_ROTATION);
 		}
 	};
@@ -177,8 +175,74 @@ public class AllThreads {
 		
 		@Override
 		public void run() {
+			Motor.B.setSpeed(DEFAULT_SPEED);
 			Motor.B.rotate(DEFAULT_ROTATION);
 			
 		}
 	};
+	
+	static Runnable B_start = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.B.setSpeed(130);
+			Motor.B.forward();
+			
+		}
+	};
+	
+	
+	static Runnable A_start = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.A.setSpeed(130);
+			Motor.A.forward();
+			
+		}
+	};
+
+	static Runnable A_reset_p = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.A.setSpeed(60);
+			Motor.A.forward();			
+		}
+	};
+	
+	static Runnable B_reset_p = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.B.setSpeed(60);
+			Motor.B.forward();
+			
+		}
+	};
+	
+	
+static Runnable B_reset_back = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.B.setSpeed(60);
+			Motor.B.rotate(-100);
+			
+		}
+	};
+	
+static Runnable A_reset_back = new Runnable() {
+		
+		@Override
+		public void run() {
+			Motor.A.setSpeed(60);
+			Motor.A.rotate(-100);
+			
+		}
+	};
+	
+	
+	
+	
 }

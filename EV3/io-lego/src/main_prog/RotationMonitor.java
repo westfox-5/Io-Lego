@@ -1,5 +1,6 @@
 package main_prog;
 
+import lejos.hardware.lcd.LCD;
 import main_prog.MainProgram.Direction;
 
 public class RotationMonitor {
@@ -11,7 +12,7 @@ public class RotationMonitor {
 	}
 	
 	public synchronized void setAngle(int a) {
-		angle = (a + 360 ) %360;
+		angle = a %360;
 		set=true;
 		notify();
 	}
@@ -25,6 +26,10 @@ public class RotationMonitor {
 		gira_sinistra[0] = new Thread(AllThreads.A_rotation_backward);
 		gira_sinistra[1] = new Thread(AllThreads.B_rotation_forward);
 		
+		Thread stop_A= new Thread(AllThreads.A_stop);
+		Thread stop_B= new Thread(AllThreads.B_stop);
+		
+		
 		while(!set) {
 			try {
 				wait();
@@ -36,6 +41,7 @@ public class RotationMonitor {
 		
 		set=false;
 		int correctAngle;
+		int diff_positive=0;
 		switch(dir) {
 		case UP : 
 			correctAngle = 180;
@@ -47,7 +53,7 @@ public class RotationMonitor {
 			correctAngle = 90;
 			break;
 		case RIGHT:
-			correctAngle = 270;
+			correctAngle = -90;
 			break;
 		default: 
 			correctAngle = this.angle;
@@ -57,12 +63,15 @@ public class RotationMonitor {
 		int diff = correctAngle-angle;
 			
 		if(diff < 0) {
+			diff_positive= -1;
+			
 			// girare destra
 			gira_destra[0].start();
 			gira_destra[1].start();
 			
 		} 
-		if(diff > 0) {
+		if(diff > 0) {			
+			diff_positive = 1;
 			// girare sinistra
 			gira_sinistra[0].start();
 			gira_sinistra[1].start();
@@ -70,19 +79,24 @@ public class RotationMonitor {
 		}
 	
 		if( diff == 0) {
-			try {
-			gira_sinistra[0].join();
-			gira_sinistra[1].join();
-			gira_destra[0].join();
-			gira_destra[0].join();
-			}catch(InterruptedException e) {
+		
+			try {	
+				stop_A.start();
+				stop_B.start();			
 				
+				if(diff_positive==1) {
+					gira_sinistra[0].join();
+					gira_sinistra[1].join();
+				} else if(diff_positive == -1) {
+					gira_destra[0].join();
+					gira_destra[1].join();
+				}
+							
+				
+			}catch(InterruptedException e) {
+				LCD.drawString("fermata", 0, 4);
 			}
 			
-			
-			new Thread(AllThreads.A_stop).start();
-			new Thread(AllThreads.B_stop).start();
-	
 			return 1; 
 		} 
 	else 

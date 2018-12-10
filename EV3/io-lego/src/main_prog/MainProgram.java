@@ -6,6 +6,7 @@ import lejos.hardware.Battery;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
@@ -16,6 +17,7 @@ public class MainProgram {
 	enum Color 	{ NOT_FOUND, RED, GREEN, BLUE, YELLOW, BLACK }
 	enum Print 	{ START, BT_CONN, MOVE, CHECK_COL, END }
 	enum Direction { UP, DOWN, LEFT, RIGHT	}
+	static boolean set=false, first= true;
 
 
 	private final static int	
@@ -31,6 +33,7 @@ public class MainProgram {
 	
 	private static EV3ColorSensor 		colorSensor;
 	private static EV3UltrasonicSensor 	uSensor;
+	private static EV3GyroSensor		gyroSensor;
 	private static int x;
 	private static int y;
 
@@ -38,23 +41,27 @@ public class MainProgram {
 		int tmp= fx-x;
 		
 		while(tmp != 0){
-
+			LCD.clear();
 			campo[x][y].reset();
 			if(tmp > 0){ // DEVO ANDARE GIU
-				if(checkObstacle(Direction.DOWN)){
-					x = crossObstacle(Direction.DOWN);
-				}else{
-					moveRobot(Direction.DOWN);
+				LCD.drawString("GIU", 0, 4);
+				rotate(Direction.DOWN);
+				//if(checkObstacle()){
+				//	x = crossObstacle(Direction.DOWN);
+				//}else{
+					moveRobot();
 					x++;
-				}	
+				//}	
 			}
 			else if(tmp < 0){ //DEVO ANDARE SU
-				if(checkObstacle(Direction.UP)){
-					x= crossObstacle(Direction.UP);
-				}else{
-					moveRobot(Direction.UP);
+				LCD.drawString("SU", 0, 4);
+				rotate(Direction.UP);
+				//if(checkObstacle()){
+				//	x= crossObstacle(Direction.UP);
+				//}else{
+					moveRobot();
 					x--;	
-				}
+				//}
 			}
 			campo[x][y].setPosition();
 			tmp= fx-x;
@@ -62,23 +69,27 @@ public class MainProgram {
 
 		tmp=fy-y;
 		while(tmp != 0){
-
+			LCD.clear();
 			campo[x][y].reset();
 			if(tmp > 0){ // DEVO ANDARE A DESTRA
-				if(checkObstacle(Direction.RIGHT)){
-					y = crossObstacle(Direction.RIGHT);					
-				}else{
-					moveRobot(Direction.RIGHT);
+				LCD.drawString("DESTRA", 0, 4);
+				rotate(Direction.RIGHT);
+				//if(checkObstacle()){
+				//	y = crossObstacle(Direction.RIGHT);					
+				//}else{
+					moveRobot();
 					y++;
-				}
+				//}
 			}
 			else if(tmp < 0){// DEVO ANDARE A SINISTRA
-				if(checkObstacle(Direction.LEFT)){
-					y= crossObstacle(Direction.LEFT);
-				}else{
-					moveRobot(Direction.LEFT);
+				LCD.drawString("SINISTRA", 0, 4);
+				rotate(Direction.LEFT);
+				//if(checkObstacle()){
+				//	y= crossObstacle(Direction.LEFT);
+				//}else{
+					moveRobot();
 					y--;	
-				}
+				//}
 			}
 			campo[x][y].setPosition();
 			tmp= fy-y;
@@ -109,40 +120,34 @@ public class MainProgram {
 		try {
 			tForward_A.join();
 			tForward_B.join();
+		
+			while(currentColor == Color.NOT_FOUND) {
+				currentColor= ColorsRGB.getColor(r, g, b);
+			}
+			
+			Thread tBack_A= new Thread(AllThreads.A_color_backward);
+			Thread tBack_B= new Thread(AllThreads.B_color_backward);
+			
+			tBack_A.start();
+			tBack_B.start();
+			try {
+				tBack_A.join();
+				tBack_B.join();
+
+				return currentColor;
+			}catch(Exception e) {
+				e.printStackTrace();
+				return null;
+				}
 		}catch(Exception e) {
 			e.printStackTrace();
+			return null;
 		}
-		
-		while(currentColor == Color.NOT_FOUND) {
-			currentColor= ColorsRGB.getColor(r, g, b);
-		}
-		
-		Thread tBack_A= new Thread(AllThreads.A_color_backward);
-		Thread tBack_B= new Thread(AllThreads.B_color_backward);
-		
-		tBack_A.start();
-		tBack_B.start();
-		try {
-			tBack_A.join();
-			tBack_B.join();
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-		return currentColor;
 	}
+
+
 	
-	private static boolean checkObstacle(Direction dir) {
-
-		Thread rotate= new Thread( new AllThreads.Rotate(rotationMonitor, dir) );
-		rotate.start();
-		
-		try {
-			// aspetta che finisca la rotazione
-			rotate.join(); 
-		} catch(InterruptedException e) {
-			e.printStackTrace();
-		}
-
+	private static boolean checkObstacle() {
 		SampleProvider distanceProvider=uSensor.getDistanceMode();
 		
 		float [] sample = new float[distanceProvider.sampleSize()];
@@ -151,14 +156,18 @@ public class MainProgram {
 		if(sample[0]!=DEFAULT_DISTANCE) {
 			return true;
 		}
-
+		
 		return false; 
+	
 	}
 	
 	// ritorna la riga o colonna dove va il robot
 	// va nella cella immediatamente successiva all'ostacolo secondo la direzione.
 	// se ostacolo si trova sul bordo, va sempre sulla cella sopra o a destra.
 	private static int crossObstacle(Direction dir){ 
+		
+		LCD.clear();
+		LCD.drawString("CROSS", 0, 4);
 		
 		// calcola la cella finale dove arrivare
 		int final_x = dir==Direction.DOWN  ? x+2 : dir==Direction.UP   ? x-2 : x;
@@ -178,19 +187,21 @@ public class MainProgram {
 			case UP:
 				// se puoi vai a destra
 				if(y<COLS-1){
-					if(checkObstacle(Direction.RIGHT)){
+					rotate(Direction.RIGHT);
+					if(checkObstacle()){
 						y= crossObstacle(Direction.RIGHT);
 					}else{
-						moveRobot(Direction.RIGHT);
+						moveRobot();
 						y--;	
 					}
 				}
 				// altrimenti vai a sinistra
 				else{
-					if(checkObstacle(Direction.LEFT)){
+					rotate(Direction.LEFT);
+					if(checkObstacle()){
 						y= crossObstacle(Direction.LEFT);
 					}else{
-						moveRobot(Direction.LEFT);
+						moveRobot();
 						y--;	
 					}
 				}
@@ -200,30 +211,34 @@ public class MainProgram {
 			case LEFT:
 				// se puoi vai giu
 				if(x<ROWS-1){
-					if(checkObstacle(Direction.DOWN)){
+					rotate(Direction.DOWN);
+					if(checkObstacle()){
 						y= crossObstacle(Direction.DOWN);
 					}else{
-						moveRobot(Direction.DOWN);
+						moveRobot();
 						y--;	
 					}
 				}
 				// altrimenti vai su
 				else{
-					if(checkObstacle(Direction.UP)){
+					rotate(Direction.UP);
+					if(checkObstacle()){
 						y= crossObstacle(Direction.UP);
 					}else{
-						moveRobot(Direction.UP);
+						moveRobot();
 						y--;	
 					}
 				}
 			break;
 		}
 
+		rotate(dir);
+		
 		// secondo step
-		if(checkObstacle(dir)){
+		if(checkObstacle()){
 			x = crossObstacle(dir);
 		}else{
-			moveRobot(dir);
+			moveRobot();
 			x++;
 		}	
 
@@ -235,34 +250,140 @@ public class MainProgram {
 		return dir==Direction.DOWN||dir==Direction.UP ? final_y: final_x;
 
 	}
+
 	
-	private static void moveRobot(Direction dir) {
-			
+	private static void rotate(Direction dir) {
+
 		Thread rotate= new Thread( new AllThreads.Rotate(rotationMonitor, dir) );
+		
+		try {
+			if(!first) {
+				Thread backA=new Thread(AllThreads.A_reset_back);
+				Thread backB=new Thread(AllThreads.B_reset_back);
+				
+				backA.start();
+				backB.start();
+				
+				backA.join();
+				backB.join();
+			}
+			
+			rotate.start();
+			rotate.join();
+			
+			
+			if(!first) {
+				SampleProvider colorProvider;
+				colorProvider=colorSensor.getRGBMode();
+				float[] colorSample;
+				int r,g,b;
+				Color currentColor= Color.NOT_FOUND;
+				
+				Thread t1 = new Thread(AllThreads.A_reset_p);
+				Thread t2 = new Thread(AllThreads.B_reset_p);
+				
+				t1.start();
+				t2.start();
+				
+				
+				do {
+					colorSample =new float[colorProvider.sampleSize()];
+					colorProvider.fetchSample(colorSample, 0);
+					r = (int)(colorSample[0]*10*255);
+					g = (int)(colorSample[1]*10*255);
+					b = (int)(colorSample[2]*10*255);
+					
+					currentColor = ColorsRGB.getColor(r, g, b);
+			
+				}while(currentColor!=Color.BLACK);
+
+				try {
+					t1.join();
+					t2.join();
+					LCD.clear();
+					
+					new Thread(AllThreads.A_stop).start();
+					new Thread(AllThreads.B_stop).start();
+					LCD.drawString("Fine rot", 0, 4);
+					Delay.msDelay(800);
+					return;
+				}catch(InterruptedException e) {
+					e.printStackTrace();
+				}
+				
+			}
+			
+			first = false;
+			
+		} catch(InterruptedException e) {
+			LCD.clear();
+			LCD.drawString("ECC", 0, 3);
+		}
+	}
+	
+	private static void moveRobot() {
+		
+		SampleProvider colorProvider;
+		colorProvider=colorSensor.getRGBMode();
+		float[] colorSample;
+		int r,g,b;
+		Color currentColor= Color.NOT_FOUND;
+				
+		Thread t1 = new Thread(AllThreads.A_start);
+		Thread t2 = new Thread(AllThreads.B_start);
+
+		t1.start();
+		t2.start();
+
+		try {
+			Thread.sleep(3000);
+		} catch(InterruptedException e) {
+			
+		}
+		
+		do {
+			colorSample =new float[colorProvider.sampleSize()];
+			colorProvider.fetchSample(colorSample, 0);
+			r = (int)(colorSample[0]*10*255);
+			g = (int)(colorSample[1]*10*255);
+			b = (int)(colorSample[2]*10*255);
+			
+			currentColor = ColorsRGB.getColor(r, g, b);
+	
+		}while(currentColor!=Color.BLACK);
+
+		try {
+			t1.join(0);
+			t2.join(0);
+			
+			new Thread(AllThreads.A_stop).start();
+			new Thread(AllThreads.B_stop).start();
+		}catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		/*
 		Thread nextCellA= new Thread( AllThreads.A_next_cell);
 		Thread nextCellB= new Thread( AllThreads.B_next_cell);
 
-		rotate.start();
-		
-		try {
-			// aspetta che finisca la rotazione
-			rotate.join(); 
-		} catch(InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		//avanza di una cella
+				//avanza di una cella
 		nextCellA.start();
 		nextCellB.start();
 		
-		try {
+		Delay.msDelay(800);
+	
+		try {	
 			// aspetta che finisca il movimento
 			nextCellA.join(); 
-			nextCellB.join();
+			nextCellB.join();	
+			Delay.msDelay(800);
+			
 		} catch(InterruptedException e) {
 			e.printStackTrace();
 		}
 		
+		
+		*/
 	}
 
 	public static void readAndParse(final BluetoothConnector bt) {
@@ -381,22 +502,53 @@ public class MainProgram {
 		x=0;
 		y=0;		
 		campo[x][y].setPosition();
-/*		
-		rotationMonitor = new RotationMonitor();
-		new Thread( new AllThreads.Gyro(rotationMonitor) ).start();
+		do {
+			try {
+				gyroSensor = new EV3GyroSensor(LocalEV3.get().getPort("S3"));
+				set=true;
+			}catch(Exception e) {
+				
+			}
+		}while(!set);
 		
-		uSensor = new EV3UltrasonicSensor(LocalEV3.get().getPort("S2"));
-		colorSensor = new EV3ColorSensor(LocalEV3.get().getPort("S4"));
-*/
-		final BluetoothConnector bt = new BluetoothConnector();
-		print(Print.BT_CONN,0,0);
+		set=false;
+		do {
+			try {
+				uSensor = new EV3UltrasonicSensor(LocalEV3.get().getPort("S2"));
+				set=true;
+			}catch(Exception e) {
+				
+		}
+		}while(!set);
+		
+		
+		set=false;
+		do {
+			try {
+				colorSensor = new EV3ColorSensor(LocalEV3.get().getPort("S4"));
+				set=true;
+			}catch(Exception e) {
+				
+			}
+		}while(!set);
+		
+		rotationMonitor = new RotationMonitor();
+		new Thread( new AllThreads.Gyro(gyroSensor, rotationMonitor) ).start();	
+
+		moveTo(1,2);
+		//rotate(Direction.LEFT);
+// 		moveRobot();
+//      rotate(Direction.RIGHT);
+//		rotate(Direction.DOWN);
+//		final BluetoothConnector bt = new BluetoothConnector();
+//		print(Print.BT_CONN,0,0);
 		
 		
 		// send battery status periodically
-		sendBatteryInfo(bt);
+//		sendBatteryInfo(bt);
 		
 		// start thread for always listening at input from app
-		readAndParse(bt);
+//		readAndParse(bt);
 		
 		
 		/*
@@ -431,9 +583,10 @@ public class MainProgram {
 		bt.send("999&");
 		
 		*/
-	
+			
+		System.exit(0);
 		
-		
+/*		
 		try {
 			bt.send("001&");
 			Delay.msDelay(3000);
@@ -444,7 +597,7 @@ public class MainProgram {
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
-		
+*/
 		
 		
 //	Thread t = new Thread(AllThreads.D_start);
@@ -551,13 +704,12 @@ public class MainProgram {
 		
 		
 		
-		//PROVA COLORE legge i colori se la linea � nera
+		//PROVA COLORE legge i colori se la linea nera
 	
 		/*
-		Port S4=LocalEV3.get().getPort("S4");
-		EV3ColorSensor color= new EV3ColorSensor(S4);
+	
 		SampleProvider colorProvider;
-		colorProvider=color.getRGBMode();
+		colorProvider=colorSensor.getRGBMode();
 		float[] colorSample;
 		
 		colorSample =new float[colorProvider.sampleSize()];
@@ -565,17 +717,18 @@ public class MainProgram {
 		int r,g,b;
 		
 		Delay.msDelay(500);
-		LTELEFONO CD.clear();
+		LCD.clear();
 		
 		// Si usano quando si usa la funzione checkColor
 		
-		S4= LocalEV3.get().getPort("S4");
-		colorSensor= new EV3ColorSensor(S4);
 	
-		Thread tA = new Thread(AllThreads.A_avanza);
-		Thread tB = new Thread(AllThreads.B_avanza);
+		Thread tA = new Thread(AllThreads.A_next_cell);
+		Thread tB = new Thread(AllThreads.B_next_cell);
+		
+		tA.start();
+		tB.start();
 
-		while(run) {
+		while(true) {
 			LCD.clear();
 			
 			colorProvider.fetchSample(colorSample, 0);
@@ -584,29 +737,13 @@ public class MainProgram {
 			g = (int)(colorSample[1]*10*255);
 			b = (int)(colorSample[2]*10*255);
 		
-			if (r+b+g < Colors.BLACK.getCode()) {
-				(new Thread(AllThreads.A_stop)).start();
-				(new Thread(AllThreads.B_stop)).start();
-				
-				Delay.msDelay(2000);
-	
-				(new Thread(AllThreads.A_avanza)).start();
-				(new Thread(AllThreads.B_avanza)).start();
-
-			}
+			LCD.drawString("R "+r+" G "+g+" B "+b, 0, 4);
 			
-
-			(new Thread(AllThreads.A_avanza)).start();
-			(new Thread(AllThreads.B_avanza)).start();
-
-			color= checkColor();
+			Delay.msDelay(300);
 			
-		
 			
 		}
-
-*/
-	
+	*/
 
 	/*GIROSCOPIO*/
  /*

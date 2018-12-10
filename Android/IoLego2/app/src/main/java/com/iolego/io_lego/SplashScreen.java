@@ -23,7 +23,7 @@ import android.widget.Toast;
 import java.io.IOException;
 
 public class SplashScreen extends AppCompatActivity {
-    private static final String TAG= "SPLASH_ACTIVITY";
+    private static final String TAG = "SPLASH_ACTIVITY";
 
     private BluetoothConnection bt;
     private Dialog reconnectDialog;
@@ -31,32 +31,30 @@ public class SplashScreen extends AppCompatActivity {
     private ProgressBar bar;
     private Handler barHandler;
 
-    private Runnable hide_bar = new Runnable() {
+    private Runnable
+            hide_bar = new Runnable() {
         @Override
         public void run() {
             bar.setVisibility(View.GONE);
         }
-    };
-
-    private Runnable show_bar = new Runnable() {
-        @Override
-        public void run() {
-            bar.setIndeterminate(true);
-            bar.setVisibility(View.VISIBLE);
-        }
-    };
-
-
+    },
+            show_bar = new Runnable() {
+                @Override
+                public void run() {
+                    bar.setIndeterminate(true);
+                    bar.setVisibility(View.VISIBLE);
+                }
+            };
 
 
     private ServiceConnection btService = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            BluetoothConnection.BluetoothBinder binder = (BluetoothConnection.BluetoothBinder)iBinder;
+            BluetoothConnection.BluetoothBinder binder = (BluetoothConnection.BluetoothBinder) iBinder;
 
             bt = binder.getService();
 
-            barHandler.post( show_bar );
+            barHandler.post(show_bar);
 
             new Handler().postDelayed(
                     new Runnable() {
@@ -86,25 +84,25 @@ public class SplashScreen extends AppCompatActivity {
 
         reconnectDialog = createDialog();
 
-        Intent btIntet = new Intent(this, BluetoothConnection.class);
-        startService(btIntet);
-        bindService(btIntet, btService, Context.BIND_AUTO_CREATE);
+        Intent btIntent = new Intent(this, BluetoothConnection.class);
+        startService(btIntent);
+        bindService(btIntent, btService, Context.BIND_AUTO_CREATE);
 
 
     }
 
     private void connect() {
-        if(reconnectDialog.isShowing()) reconnectDialog.dismiss();
+        if (reconnectDialog.isShowing()) reconnectDialog.dismiss();
         int ris;
         try {
             ris = bt.connect();
         } catch (IOException e) {
-            ris =-1;
+            ris = -1;
         }
-        switch(ris) {
+        switch (ris) {
 
             case 0: // connesso
-                Log.d(TAG,"Connection established");
+                Log.d(TAG, "Connection established");
                 btConnTXT.post(new Runnable() {
                     @Override
                     public void run() {
@@ -122,7 +120,7 @@ public class SplashScreen extends AppCompatActivity {
                         startActivity(i);
 
                         SplashScreen.this.finish();
-                        overridePendingTransition(R.anim.slide_left,R.anim.slide_right);
+                        overridePendingTransition(R.anim.slide_left, R.anim.slide_right);
 
                     }
                 }, 1000);
@@ -189,17 +187,17 @@ public class SplashScreen extends AppCompatActivity {
     private void enableBluetooth() {
         try {
             Thread.sleep(500);
-        }catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         Intent enabelBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(enabelBT,0 );
+        startActivityForResult(enabelBT, 0);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode==0) {
+        if (requestCode == 0) {
             Toast.makeText(this, getResources().getString(R.string.bt_enable), Toast.LENGTH_SHORT).show();
             btConnTXT.setText(R.string.bt_pairing);
             reconnectDialog.show();
@@ -210,7 +208,7 @@ public class SplashScreen extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if(btService !=null) {
+        if (btService != null) {
             unbindService(btService);
         }
         super.onDestroy();
