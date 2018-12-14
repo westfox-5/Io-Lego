@@ -32,8 +32,8 @@ public class Main extends AppCompatActivity {
             TAG_COLOR = "COLOR";
 
     private static final int
-            VOLTAGE_LOW = 3,
-            VOLTAGE_MIDDLE = 6,
+            VOLTAGE_LOW = 6,
+            VOLTAGE_MIDDLE = 7,
             ROWS = 5,
             COLS = 4;
 
@@ -126,9 +126,10 @@ public class Main extends AppCompatActivity {
         progressLayout.setVisibility(View.INVISIBLE);
         btnMain = findViewById(R.id.startBtn);
 
-        map = new int[5][5];
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 5; j++) {
+        map = new int[ROWS][COLS];
+        for (int i = 0; i < ROWS; i++) {
+            map[i] = new int[COLS];
+            for (int j = 0; j < COLS; j++) {
                 map[i][j] = 0;
             }
         }
@@ -215,8 +216,8 @@ public class Main extends AppCompatActivity {
         btnMain.setBackgroundColor(getResources().getColor(R.color.red));
 
         /* create the string as ROW|COL|COLOR|& */
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; i < 5; i++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; i < COLS; i++) {
                 if (map[i][j] != 0) {
                     message = message.concat(String.valueOf(i))
                             .concat(String.valueOf(j))
