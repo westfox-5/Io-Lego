@@ -15,14 +15,17 @@ public class Reset extends Thread{
 			B.setSpeed(60);
 		
 			A.startSynchronization();
-			A.rotate(-100);
-			B.rotate(-100);				
+			A.rotate(-100,true);
+			B.rotate(-100,true);				
 			A.endSynchronization();
-			
+
 			A.waitComplete();
+			B.waitComplete();
 			
+			A.startSynchronization();
 			A.stop(true);
 			B.stop(true);
+			A.endSynchronization();
 		}
 	
 }

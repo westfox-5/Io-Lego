@@ -1,9 +1,17 @@
 package main_prog;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 
+import javax.imageio.ImageIO;
+
 import lejos.hardware.Battery;
+import lejos.hardware.BrickFinder;
 import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.GraphicsLCD;
+import lejos.hardware.lcd.Image;
 import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.sensor.EV3ColorSensor;
@@ -11,6 +19,7 @@ import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.RegulatedMotor;
 import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
 import utils.*;
 
 public class MainProgram {
@@ -30,26 +39,30 @@ public class MainProgram {
 	static boolean set, first;
 
 	private final static int BATTERY_TIMEOUT = 60, ROWS = 5, COLS = 4;
-	private final static double DEFAULT_DISTANCE = 0.1;
-	private final static String END_STRING = "999";
+	private final static double DEFAULT_DISTANCE = 0.15;
+	private final static String 
+		END_STRING = "999",
+		COLOR_PORT = "S4", GYRO_PORT = "S3", US_PORT = "S2";
+	
 
+	
+	
 	private static Cell[][] campo;
 	private static RotationMonitor rotationMonitor;
 
 	private static EV3ColorSensor colorSensor;
 	private static EV3UltrasonicSensor uSensor;
 	private static EV3GyroSensor gyroSensor;
-	private static int x;
-	private static int y;
+	
+
+	private static int x, y;
 	private static SampleProvider 
 		colorProvider, distanceProvider;
 
 	private static GyroscopeThread gyroThread;
 	private static RegulatedMotor A, B;
 	
-	private static Direction lastDirection;
-
-
+	private static LegoGraphics g;		
 	public static void moveTo(int fx, int fy){ 
 		int tmp= fx-x;
 	  
@@ -58,16 +71,21 @@ public class MainProgram {
 		  campo[x][y].reset(); 
 		  if(tmp > 0){
 			  LCD.drawString("GIU", 0, 4); 
-			  //if(checkObstacle()){  x = crossObstacle(Direction.DOWN); }else{
-			  moveRobot(); x++; 
-			  //} 
+			  if(checkObstacle()){  
+				  x = crossObstacle(Direction.DOWN); 
+			  }else{
+				  moveRobot(); x++; 
+			  } 
 		  } else if(tmp < 0){ //DEVO ANDARE SU
 			  LCD.drawString("GIRATI", 0, 4); rotate(Direction.REVERSE); 
-			  //if(checkObstacle()){ //x= crossObstacle(Direction.UP); //}else{ 
-			  moveRobot(); x--; 
-			  //} 
+			  if(checkObstacle()){
+				  x= crossObstacle(Direction.REVERSE); 
+			  }else{ 
+				  moveRobot(); x--; 
+			  } 
 		  }
-	  campo[x][y].setPosition(); tmp= fx-x; 
+		  campo[x][y].setPosition(); 
+		  tmp= fx-x; 
 	  }
 	  
 	  tmp=fy-y; 
@@ -76,15 +94,21 @@ public class MainProgram {
 		  campo[x][y].reset(); 
 		  if(tmp > 0){ 
 			  LCD.drawString("DESTRA", 0, 4); rotate(Direction.RIGHT);
-			  //if(checkObstacle()){ // y = crossObstacle(Direction.RIGHT); //}else{
-			  moveRobot(); y++; 
-			  //}
+			  if(checkObstacle()){
+				  y = crossObstacle(Direction.RIGHT);
+			  }else {
+				  moveRobot(); y++; 
+			  }
 		  } else if(tmp < 0){
 			  LCD.drawString("SINISTRA", 0, 4); rotate(Direction.LEFT);
-			  //if(checkObstacle()){ // y= crossObstacle(Direction.LEFT); //}else{
-			  moveRobot(); y--; //} 
+			  if(checkObstacle()){
+				  y= crossObstacle(Direction.LEFT);
+			  }else {
+			  moveRobot(); y--;
+			  }
 		  } 
-	  campo[x][y].setPosition(); tmp= fy-y; 
+		  campo[x][y].setPosition(); 
+		  tmp= fy-y; 
 	  }
 			  
   }
@@ -139,24 +163,28 @@ public class MainProgram {
 		distanceProvider = uSensor.getDistanceMode();
 
 		float[] sample = new float[distanceProvider.sampleSize()];
-		distanceProvider.fetchSample(sample, 0);
-
-		if (sample[0] != DEFAULT_DISTANCE) {
-			return true;
+		while(true) {
+			distanceProvider.fetchSample(sample, 0);
+	
+			LCD.clear();
+			LCD.drawString(""+sample[0], 0, 4);
+			Delay.msDelay(300);
 		}
-
-		return false;
-
+//		return (sample[0] <= DEFAULT_DISTANCE);
 	}
 
 	// ritorna la riga o colonna dove va il robot
 	// va nella cella immediatamente successiva all'ostacolo secondo la direzione.
 	// se ostacolo si trova sul bordo, va sempre sulla cella sopra o a destra.
 	
-	  private static int crossObstacle(Direction dir){
+	private static int crossObstacle(Direction dir){
 	  
 	  LCD.clear(); LCD.drawString("CROSS", 0, 4);
 	  
+	  Delay.msDelay(1000);
+	  
+	  return 0;
+	  /*
 	  // calcola la cella finale dove arrivare 
 	  int final_x = dir==Direction.DOWN ?
 	  x+2 : dir==Direction.REVERSE ? x-2 : x; int final_y = dir==Direction.RIGHT ? y+2 :
@@ -196,42 +224,35 @@ public class MainProgram {
 	  
 	  // ritornare la x se è andato a right/left // ritornare la y se è andato a
 	  return dir==Direction.DOWN||dir==Direction.REVERSE ? final_y: final_x;
-	  
-	  }
+	  */
+	}
 	 
 
 	private static void rotate(Direction dir) {
-		gyroSensor.reset();
+		gyroThread.reset();
+		
 		RotationController rotate = new RotationController(rotationMonitor, dir, A, B);
 		rotate.start();
 
 		try {
 			rotate.join();
-			A.stop(true);
-			B.stop(true);
-			
-			LCD.clear();
-			LCD.drawString("End Rotation", 0, 4);
-
-			lastDirection = dir;
+			Delay.msDelay(1000);
 			return;
 			
 		} catch (InterruptedException e) {
 			LCD.clear();
-			LCD.drawString("ECC", 0, 3);
+			LCD.drawString("Excetion rotation", 0, 3);
 		}
 	}
 
 	private static void moveRobot() {
-
-		LCD.clear();
-		LCD.drawString("start move", 0, 4);
 		float[] colorSample;
 		int r, g, b;
 		Color currentColor = Color.NOT_FOUND;
 
 		Forward forward = new Forward(A,B);
-		forward.start();
+		Thread f = new Thread(forward, "forward");
+		f.start();
 
 		try {
 			Thread.sleep(3000);
@@ -246,37 +267,24 @@ public class MainProgram {
 				currentColor = ColorsRGB.getColor(r, g, b);
 			} while (currentColor != Color.BLACK);
 
-			LCD.clear();
-			LCD.drawString("stopped moving", 0, 4);
-
-			forward.interrupt();
+			forward.stop();
 	
 			reset();
 			
-			//center();
 			return;
 				
 		} catch (Exception e) {
-			e.printStackTrace();
+			LCD.clear();
+			LCD.drawString("Excetion moving", 0, 3);
 
 		}
 	}
 	
-	public static void center() {
-		if(lastDirection!=null)
-			rotate(lastDirection);
-		LCD.clear();
-		LCD.drawString("centered", 0, 4);
-
-	}
-
 	public static void reset() {
 		Reset reset = new Reset(A, B);
 		reset.start();
 		try {
 			reset.join();
-			LCD.clear();
-			LCD.drawString("reset", 0, 4);
 			return;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -294,6 +302,7 @@ public class MainProgram {
 					String message;
 					try {
 						message = bt.read();
+						g.receivedInput();
 
 					} catch (IOException e) {
 						message = null;
@@ -345,6 +354,7 @@ public class MainProgram {
 			public void run() {
 				while (true) {
 					try {
+
 						bt.send(String.valueOf((int) Battery.getVoltage()) + "#");
 						Thread.sleep(BATTERY_TIMEOUT * 1000);
 
@@ -392,15 +402,12 @@ public class MainProgram {
 			}
 		}
 
-		x = 0;
-		y = 0;
-		campo[x][y].setPosition();
 		first = true;
 		set = false;
 
 		do {
 			try {
-				gyroSensor = new EV3GyroSensor(LocalEV3.get().getPort("S3"));
+				gyroSensor = new EV3GyroSensor(BrickFinder.getDefault().getPort(GYRO_PORT));
 				set = true;
 			} catch (Exception e) {
 
@@ -410,7 +417,7 @@ public class MainProgram {
 		set = false;
 		do {
 			try {
-				uSensor = new EV3UltrasonicSensor(LocalEV3.get().getPort("S2"));
+				uSensor = new EV3UltrasonicSensor(BrickFinder.getDefault().getPort(US_PORT));
 				distanceProvider = uSensor.getDistanceMode();
 
 				set = true;
@@ -422,7 +429,7 @@ public class MainProgram {
 		set = false;
 		do {
 			try {
-				colorSensor = new EV3ColorSensor(LocalEV3.get().getPort("S4"));
+				colorSensor = new EV3ColorSensor(BrickFinder.getDefault().getPort(COLOR_PORT));
 				colorProvider = colorSensor.getRGBMode();
 				set = true;
 			} catch (Exception e) {
@@ -433,7 +440,7 @@ public class MainProgram {
 		set = false;
 		do {
 			try {
-				A = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
+				A = new EV3LargeRegulatedMotor(BrickFinder.getDefault().getPort("A"));
 				set = true;
 			} catch (Exception e) {
 
@@ -443,7 +450,7 @@ public class MainProgram {
 		set = false;
 		do {
 			try {
-				B = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
+				B = new EV3LargeRegulatedMotor(BrickFinder.getDefault().getPort("B"));
 				set = true;
 			} catch (Exception e) {
 
@@ -455,28 +462,41 @@ public class MainProgram {
 		
 		gyroThread = new GyroscopeThread(gyroSensor, rotationMonitor);
 		gyroThread.start();
-		
-		lastDirection = null;
 	}
 
+
 	public static void main(String[] args) {
+		g = new LegoGraphics();
 		
+		g.drawLogo();
+		
+		g.drawSetup();
 		
 		setup();	
 		
-		/* START CODE */
-
-		//moveRobot();
+		g.setupComplete();
 		
+		x = 0;
+		y = 0;
+		campo[x][y].setPosition();
+		
+		Delay.msDelay(3000);
+		
+		
+//		moveRobot();
+		g.receivedInput();
 		rotate(Direction.RIGHT);
-
-		rotate(Direction.LEFT);
 		moveRobot();
 		rotate(Direction.REVERSE);
 		moveRobot();
+		rotate(Direction.REVERSE);
+		rotate(Direction.RIGHT);
+		rotate(Direction.LEFT);
+		moveRobot();
+		//rotate(Direction.REVERSE);
+			
 		
-		
-//		moveTo(1,2);
+//		moveTo(1,0);
 
 //		final BluetoothConnector bt = new BluetoothConnector();
 //		print(Print.BT_CONN,0,0);
@@ -666,5 +686,5 @@ public class MainProgram {
 		 * Delay.msDelay(5000); }
 		 */
 	}
-
+	
 }

@@ -5,7 +5,8 @@ import main_prog.MainProgram.*;
 
 public class RotationMonitor {
 	private int angle;
-	private boolean set, first=true;
+	private boolean set;
+	private volatile boolean first=true;
 
 	public RotationMonitor(){
 		this.angle=0;
@@ -15,11 +16,7 @@ public class RotationMonitor {
 		set=true;
 		notify();
 	}
-	
-	public void setFirst() {
-		this.first = true;
-	}
-	
+
 	public synchronized int rotate(Direction dir, Rotations.Left sx, Rotations.Right dx) {
 		
 		while(!set) {
@@ -52,20 +49,19 @@ public class RotationMonitor {
 		}
 		
 		int diff = correctAngle-angle;
-//		LCD.clear();
-//		LCD.drawInt(diff, 0, 4);
+		System.out.println(diff);
 		
 		if(diff < 0) {			
 			// girare destra
 			if(first) {
-				dx.start();				
+				new Thread(dx, "DX").start();			
 				first = false;
 			}
 		} 
 		if(diff > 0) {			
 			// girare sinistra
 			if(first) {
-				sx.start();
+				new Thread(sx, "SX").start();
 				first = false;
 			}
 			
@@ -73,12 +69,13 @@ public class RotationMonitor {
 	
 		if( diff == 0) {
 			try {			
-				LCD.clear();
-				sx.interrupt();
-				dx.interrupt();
+				sx.stop();
+				dx.stop();
+
+				first = true;
 			}catch(Exception e) {
 				LCD.clear();
-				LCD.drawString("fermata", 0, 4);
+				LCD.drawString("Exception rotation monitor", 0, 4);
 				
 			}
 			

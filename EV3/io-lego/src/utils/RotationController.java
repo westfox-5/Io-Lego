@@ -14,23 +14,14 @@ public class RotationController extends Thread {
 		this.m = m;
 		this.dir = dir;
 		this.A = A; this.B = B;
-		
-		this.m.setFirst();
 	}
 	
 	@Override
-	public void run() {
-
-		LCD.clear();
-		LCD.drawString("start rot", 0, 4);
-		
+	public void run() {			
 		Rotations.Left l =  new Rotations.Left(A, B);
 		Rotations.Right r = new Rotations.Right(A, B);
 		
-		
 		while( this.m.rotate(this.dir, l, r ) == -1) {}
 		
-		l.interrupt();
-		r.interrupt();
 	}
 }
