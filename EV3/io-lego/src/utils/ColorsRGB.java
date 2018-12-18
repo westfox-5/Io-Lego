@@ -1,6 +1,5 @@
 package utils;
 
-import main_prog.MainProgram;
 import main_prog.MainProgram.Color;
 
 public class ColorsRGB {

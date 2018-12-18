@@ -71,7 +71,6 @@ public class SplashScreen extends AppCompatActivity {
         }
     };
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,7 +81,10 @@ public class SplashScreen extends AppCompatActivity {
 
         barHandler = new Handler();
 
-        reconnectDialog = createDialog();
+        reconnectDialog = createDialog(
+                getResources().getString(R.string.alert_reconnect_title),
+                getResources().getString(R.string.alert_reconnect_text),
+                "");
 
         Intent btIntent = new Intent(this, BluetoothConnection.class);
         startService(btIntent);
@@ -148,10 +150,17 @@ public class SplashScreen extends AppCompatActivity {
 
                 enableBluetooth();
                 break;
+            case 3: // no bt adapter
+                Log.e(TAG, "Fatal error");
+                createDialog(
+                        getResources().getString(R.string.alert_fatal_error_title),
+                        getResources().getString(R.string.alert_fatal_error_text), null)
+                        .show();
+
         }
     }
 
-    private AlertDialog createDialog() {
+    private AlertDialog createDialog(String title, String message, String retry) {
         AlertDialog.Builder build;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             build = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
@@ -159,21 +168,22 @@ public class SplashScreen extends AppCompatActivity {
             build = new AlertDialog.Builder(this);
         }
         build.setCancelable(false);
-        build.setTitle(R.string.alert_reconnect_title);
-        build.setMessage(R.string.alert_reconnect_text);
-        build.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+        build.setTitle(title);
+        build.setMessage(message);
+        if(retry!=null)
+            build.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                new Handler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        barHandler.removeCallbacks(hide_bar);
-                        barHandler.post(show_bar);
-                        connect();
-                    }
-                });
+                    new Handler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            barHandler.removeCallbacks(hide_bar);
+                            barHandler.post(show_bar);
+                            connect();
+                        }
+                    });
             }
-        });
+            });
         build.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {

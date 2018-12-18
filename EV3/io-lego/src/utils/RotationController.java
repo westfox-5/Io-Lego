@@ -1,6 +1,5 @@
 package utils;
 
-import lejos.hardware.lcd.LCD;
 import lejos.robotics.RegulatedMotor;
 import main_prog.MainProgram.*;
 

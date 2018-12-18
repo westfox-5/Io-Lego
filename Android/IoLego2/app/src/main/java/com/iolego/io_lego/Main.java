@@ -29,13 +29,16 @@ import java.util.Objects;
 public class Main extends AppCompatActivity {
     private static final String
             TAG = "IO-LEGO_ACTIVITY",
-            TAG_COLOR = "COLOR";
+            TAG_COLOR = "COLOR",
+            END_STRING = "999";
 
     private static final int
-            VOLTAGE_LOW = 6,
-            VOLTAGE_MIDDLE = 7,
             ROWS = 5,
             COLS = 4;
+
+    private static final float
+            VOLTAGE_LOW = 6.4f,
+            VOLTAGE_MIDDLE = 6.9f;
 
 
     private ImageButton b;
@@ -61,16 +64,12 @@ public class Main extends AppCompatActivity {
     int[] BTimageArray = {R.drawable.ic_bluetooth_disabled_black, R.drawable.ic_bluetooth_disabled};
 
     private final Runnable changeBTImage = new Runnable() {
-
         int i = 0;
 
         public void run() {
             bluetoothImage.setImageResource(BTimageArray[i]);
-            i++;
-            if (i > BTimageArray.length - 1) {
-                i = 0;
-            }
-            btHandler.postDelayed(this, 1000);  //for interval...
+            i = (i + 1) % 2;
+            btHandler.postDelayed(this, 1000);
         }
     };
 
@@ -146,65 +145,20 @@ public class Main extends AppCompatActivity {
                         }
                         searching = !searching;
                     } else {
-                        Log.e(TAG, "BT not connected");
+                        Log.e(TAG, "Bluetooth not connected");
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.bt_failed), Toast.LENGTH_SHORT).show();
+
+                        // read thread already does the reconnect
                     }
                 }
             }
         });
-
-
         bluetoothImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 reconnect();
             }
         });
-
-    }
-
-    public void chooseColor(View view) {
-        b = (ImageButton) view;
-        String id = getResources().getResourceEntryName(view.getId());
-        x = id.charAt(1) - '0';
-        y = id.charAt(2) - '0';
-        colorChooseDialog.show();
-    }
-
-    public void setColor(View view) {
-        String id = getResources().getResourceEntryName(view.getId());
-
-        switch (id) {
-            case "yellow":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
-                Log.d(TAG_COLOR, "Yellow in " + x + y);
-                map[x][y] = 1;
-                break;
-
-            case "blue":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.blue));
-                Log.d(TAG_COLOR, "Blue in " + x + y);
-                map[x][y] = 2;
-                break;
-
-            case "green":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
-                Log.d(TAG_COLOR, "Green in " + x + y);
-                map[x][y] = 3;
-                break;
-
-            case "red":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.red));
-                Log.d(TAG_COLOR, "Red in " + x + y);
-                map[x][y] = 4;
-                break;
-
-            case "undo":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
-                Log.d(TAG_COLOR, "Undo in " + x + y);
-                map[x][y] = 0;
-                break;
-        }
-        colorChooseDialog.hide();
     }
 
     private void startSearch() {
@@ -264,54 +218,53 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    private void read() {
-        new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        while (true) {
-                            String message;
-                            if (bluetoothBound) {
-                                try {
-                                    message = bt.read();
+    private void terminate() {
 
+    }
 
-                                    if (message.charAt(1) == '#') {
+    public void chooseColor(View view) {
+        b = (ImageButton) view;
+        String id = getResources().getResourceEntryName(view.getId());
+        x = id.charAt(1) - '0';
+        y = id.charAt(2) - '0';
+        colorChooseDialog.show();
+    }
 
-                                        Log.d(TAG, "Received battery info: " + message);
-                                        setBatteryIcon(Integer.parseInt(message.substring(0, 1)));
+    public void setColor(View view) {
+        String id = getResources().getResourceEntryName(view.getId());
 
-                                    } else if (message.charAt(3) == '&') {
+        switch (id) {
+            case "yellow":
+                b.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
+                Log.d(TAG_COLOR, "Yellow in " + x + y);
+                map[x][y] = 1;
+                break;
 
+            case "blue":
+                b.setBackgroundColor(ContextCompat.getColor(this, R.color.blue));
+                Log.d(TAG_COLOR, "Blue in " + x + y);
+                map[x][y] = 2;
+                break;
 
-                                        if (message.equals("999&")) {
-                                            Log.d(TAG, "Search terminated");
-                                        } else {
-                                            Log.d(TAG, "Received cell info: " + message);
-                                            setChecked(Integer.parseInt(message.substring(0, 1)),
-                                                    Integer.parseInt(message.substring(1, 2)),
-                                                    Integer.parseInt(message.substring(2, 3)) == 1);
-                                        }
-                                    }
+            case "green":
+                b.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
+                Log.d(TAG_COLOR, "Green in " + x + y);
+                map[x][y] = 3;
+                break;
 
-                                    btConnected = true;
-                                } catch (IOException e) {
-                                    Log.e(TAG, "BT unavailable");
-                                    btConnected = false;
-                                    reconnectHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            reconnect();
-                                        }
-                                    });
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-        ).start();
+            case "red":
+                b.setBackgroundColor(ContextCompat.getColor(this, R.color.red));
+                Log.d(TAG_COLOR, "Red in " + x + y);
+                map[x][y] = 4;
+                break;
 
+            case "undo":
+                b.setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
+                Log.d(TAG_COLOR, "Undo in " + x + y);
+                map[x][y] = 0;
+                break;
+        }
+        colorChooseDialog.hide();
     }
 
     private void setChecked(int row, int col, final boolean correct) {
@@ -336,7 +289,7 @@ public class Main extends AppCompatActivity {
         });
     }
 
-    private void setBatteryIcon(int batteryVoltage) {
+    private void setBatteryIcon(float batteryVoltage) {
         if (batteryVoltage == -1) {
             batteryImage.post(new Runnable() {
                 @Override
@@ -369,10 +322,59 @@ public class Main extends AppCompatActivity {
         }
     }
 
+    private void read() {
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        while (true) {
+                            String message;
+                            if (bluetoothBound) {
+                                try {
+                                    message = bt.read();
+
+                                    if (message.charAt(3) == '#') {
+                                        Log.d(TAG, "Received battery info: " + message);
+                                        setBatteryIcon(Float.parseFloat(message.substring(0, 3)));
+
+                                    } else if (message.charAt(3) == '&') {
+                                        if (message.substring(0, 3).equals(END_STRING)) {
+                                            Log.d(TAG, "Search terminated");
+                                            // here the search is terminated
+                                            terminate();
+
+                                        } else {
+                                            Log.d(TAG, "Received cell info: " + message);
+                                            setChecked(Integer.parseInt(message.substring(0, 1)),
+                                                    Integer.parseInt(message.substring(1, 2)),
+                                                    Integer.parseInt(message.substring(2, 3)) == 1);
+                                        }
+                                    }
+
+                                    btConnected = true;
+                                } catch (IOException e) {
+                                    Log.e(TAG, "Bluetooth unavailable");
+                                    btConnected = false;
+                                    reconnectHandler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            reconnect();
+                                        }
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+        ).start();
+
+    }
+
     private void reconnect() {
 
         btHandler.removeCallbacks(changeBTImage);
-        btHandler.post(changeBTImage); //for initial delay..
+        btHandler.post(changeBTImage);
 
 
         new Thread(new Runnable() {
@@ -385,8 +387,9 @@ public class Main extends AppCompatActivity {
                     ris = -1;
                     btConnected = false;
                 }
+
                 switch (ris) {
-                    case 0: // connesso
+                    case 0:
                         Log.d(TAG, "Connection established");
 
                         btConnected = true;
@@ -406,7 +409,6 @@ public class Main extends AppCompatActivity {
                 }
             }
         }).start();
-
     }
 
     @Override
@@ -414,6 +416,7 @@ public class Main extends AppCompatActivity {
 
         if (isTaskRoot())
             super.onBackPressed();
+
         AlertDialog.Builder build;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             build = new android.support.v7.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
@@ -426,6 +429,7 @@ public class Main extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 Main.this.finish();
+                System.exit(0);
             }
         });
         build.setNegativeButton("NO", new DialogInterface.OnClickListener() {

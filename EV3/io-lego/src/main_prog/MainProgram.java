@@ -4,6 +4,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.MathContext;
+import java.text.DecimalFormat;
 
 import javax.imageio.ImageIO;
 
@@ -354,43 +356,16 @@ public class MainProgram {
 			public void run() {
 				while (true) {
 					try {
-
-						bt.send(String.valueOf((int) Battery.getVoltage()) + "#");
+						double b = Math.round(Battery.getVoltage()*10) /10.0; // get battery as #.#
+						bt.send(String.valueOf(b).concat("#"));
 						Thread.sleep(BATTERY_TIMEOUT * 1000);
 
 					} catch (Exception e) {
-
+						// do nothing
 					}
 				}
 			}
 		}).start();
-	}
-
-	private static void print(Print info, int x, int y) {
-		switch (info) {
-		case START:
-			LCD.clear();
-			LCD.drawString("IO - LEGO", 0, 0);
-			break;
-		case BT_CONN:
-			LCD.drawString("BT connected", 0, 2);
-			break;
-		case MOVE:
-			LCD.clear(0, 4, 20);
-			LCD.clear(0, 5, 20);
-			LCD.drawString("next:", 0, 4);
-			LCD.drawString("X: " + x + " Y: " + y, 0, 5);
-			break;
-		case CHECK_COL:
-			LCD.clear(0, 4, 20);
-			LCD.clear(0, 5, 20);
-			LCD.drawString("Sending color...", 0, 4);
-			break;
-		case END:
-			LCD.clear(0, 4, 20);
-			LCD.clear(0, 5, 20);
-			LCD.drawString("Finish!", 0, 4);
-		}
 	}
 	
 	public static void setup() {
@@ -484,49 +459,54 @@ public class MainProgram {
 		
 		
 //		moveRobot();
-		g.receivedInput();
-		rotate(Direction.RIGHT);
-		moveRobot();
-		rotate(Direction.REVERSE);
-		moveRobot();
-		rotate(Direction.REVERSE);
-		rotate(Direction.RIGHT);
-		rotate(Direction.LEFT);
-		moveRobot();
-		//rotate(Direction.REVERSE);
-			
+//		rotate(Direction.RIGHT);
+//		moveRobot();
+//		rotate(Direction.REVERSE);
+//		moveRobot();
+//		rotate(Direction.REVERSE);
+//		rotate(Direction.RIGHT);
+//		rotate(Direction.LEFT);
+//		moveRobot();
+//		rotate(Direction.REVERSE);	
 		
 //		moveTo(1,0);
 
-//		final BluetoothConnector bt = new BluetoothConnector();
-//		print(Print.BT_CONN,0,0);
+		g.btWait();
+		final BluetoothConnector bt = new BluetoothConnector();
+		g.btConnect();
+		
+// 		send battery status periodically
+		sendBatteryInfo(bt);
 
- 		//send battery status periodically
-//		sendBatteryInfo(bt);
-
-		// start thread for always listening at input from app
+		try {
+			Thread.sleep(10000);
+		} catch(Exception e) {
+			
+		}
+		
+//		 start thread for always listening at input from app
 //		readAndParse(bt);
 
 		System.exit(0);
 		/*
 		 * 
-		 * // start searching for(int i =0; i<ROWS; i++) { for(int j =0; j<COLS; j++) {
+		 * // start searching
+		 * for(int i =0; i<ROWS; i++) { 
+		 * for(int j =0; j<COLS; j++) {
 		 * 
 		 * if(campo[i][j].hasColor()) {
 		 * 
-		 * print(Prints.MOVE, i, j); // spostamento robot fino a quella posizione
 		 * moveTo(i,j);
 		 * 
-		 * // ora bisogna controllare il colore se è giusto o no, // si invia il colore
-		 * all' app android e si andrebbe a controllare l'altro colore
+		 * // ora bisogna controllare il colore se e giusto o no, 
+		 * // si invia il colore all' app android e si andrebbe a controllare l'altro colore
 		 * 
-		 * print(Prints.CHECK_COL, 0, 0);
+		 * 
 		 * 
 		 * bt.send(new StringBuilder() .append(x) .append(y) .append(
 		 * campo[i][j].isCorrectColor( checkColor() ) ? 1 : 0) .append('&') .toString()
 		 * ); } } }
 		 * 
-		 * print(Prints.END, 0,0); bt.send("999&");
 		 * 
 		 */
 

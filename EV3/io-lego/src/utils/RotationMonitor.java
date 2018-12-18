@@ -49,7 +49,7 @@ public class RotationMonitor {
 		}
 		
 		int diff = correctAngle-angle;
-		System.out.println(diff);
+//		System.out.println(diff);
 		
 		if(diff < 0) {			
 			// girare destra

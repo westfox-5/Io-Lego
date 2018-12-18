@@ -5,11 +5,11 @@ import lejos.hardware.lcd.Font;
 import lejos.hardware.BrickFinder;
 import lejos.hardware.Button;
 import lejos.hardware.lcd.GraphicsLCD;
-import lejos.utility.Delay;
+import lejos.hardware.lcd.LCD;
 
 public class LegoGraphics {
 	private GraphicsLCD g;
-	private int W,H;
+	private int W, H;
 	
 	public LegoGraphics() {
 		this.g= BrickFinder.getDefault().getGraphicsLCD();
@@ -20,6 +20,7 @@ public class LegoGraphics {
 	
 	public void drawLogo() {
 		g.clear();
+		LCD.clear();
 		g.setFont(Font.getDefaultFont());
 		g.drawString("IO-LEGO", W/2-45, 2, 0);
 		g.drawLine(0, 20, W, 20);
@@ -42,7 +43,20 @@ public class LegoGraphics {
 		g.drawString("Sensors enabled", 0,50,0);
 	}
 	
+	public void btWait() {
+		g.clear();
+		
+		g.drawString("Waiting for", 0, 35, 0);
+		g.drawString("bluetooth " , 0, 55, 0);
+	}
 	
+	public void btConnect() {
+		LCD.clear();
+		drawLogo();
+		
+		g.drawString("Bluetooth", 0, 35, 0);
+		g.drawString("connected!", 0, 55, 0);
+	}
 	
 	public void receivedInput() {
 		drawLogo();

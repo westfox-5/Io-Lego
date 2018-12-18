@@ -24,10 +24,8 @@ public class BluetoothConnection extends Service {
     private final IBinder bluetoothBinder = new BluetoothBinder();
 
     private OutputStream outputStream;
-    private InputStream inputStream;
     private BluetoothSocket socket;
     private InputStreamReader inputReader;
-
 
     public class BluetoothBinder extends Binder {
         public BluetoothConnection getService() { return BluetoothConnection.this; }
@@ -50,11 +48,12 @@ public class BluetoothConnection extends Service {
     }
 
     int connect() throws IOException {
+        InputStream inputStream;
+
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
         if (blueAdapter != null) {
-            if (blueAdapter.isEnabled()) {/*ritorna true se il bluetooth è attivo sul telefono*/
-                if(MAC_ADDRESS != null) {
-
+            if (blueAdapter.isEnabled()) { // check if bt is enabled
+                if(MAC_ADDRESS != null) { // already paired? no need to search for it
                     socket.connect();
                     Log.w(TAG, "Device connected. MAC " + MAC_ADDRESS);
                     outputStream = socket.getOutputStream();
@@ -62,16 +61,15 @@ public class BluetoothConnection extends Service {
 
                     inputReader = new InputStreamReader(inputStream);
 
-
                     return 0;
 
                 }else {
                     Set<BluetoothDevice> bondedDevices = blueAdapter.getBondedDevices();
-                    BluetoothDevice device = searchDevice(bondedDevices);/*ritorna un bluetooth device*/
+                    BluetoothDevice device = searchDevice(bondedDevices); // search for exactly the EV3
                     if (device != null) {
                         ParcelUuid[] uuids = device.getUuids();
 
-                        this.socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
+                        this.socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid()); // initialize the socket to EV3
                         socket.connect();
                         Log.w(TAG, "Device connected. MAC " + MAC_ADDRESS);
                         outputStream = socket.getOutputStream();
@@ -80,10 +78,9 @@ public class BluetoothConnection extends Service {
                         inputReader = new InputStreamReader(inputStream);
 
                         return 0;
-
-
                     } else {
                         Log.e(TAG, "No appropriate paired devices.");
+                        return 1;
                     }
                 }
             } else {
@@ -106,14 +103,14 @@ public class BluetoothConnection extends Service {
     }
 
     public void send(String str) throws IOException {
-        Log.d("stringa", str);
+        Log.d("Sent to EV3", str);
         outputStream.write(str.getBytes(Charset.forName("UTF-8")));
         outputStream.write("\0".getBytes());
     }
 
     String read() throws IOException {
         int bytesRead;
-        char[] buffer = new char[256];
+        char[] buffer = new char[4];
 
         bytesRead = inputReader.read(buffer, 0, 4);
         return new String(buffer, 0, bytesRead);
