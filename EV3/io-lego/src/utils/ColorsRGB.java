@@ -8,7 +8,7 @@ public class ColorsRGB {
 	private static int[] G= 	{80,  100, 80};
 	private static int[] B= 	{80,  80,  100};
 	private static int[] Y= 	{200, 100, 70};
-	private static int[] BLACK= {20,  20,  20};
+	private static int[] BLACK= {65,  65,  65};
 	
 	
 	public static Color getColor(int r, int g, int b) {

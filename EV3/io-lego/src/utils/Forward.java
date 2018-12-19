@@ -14,6 +14,7 @@ public class Forward implements Runnable {
 	public void stop() {
 		this.exit = true;
 	}
+
 	
 	@Override
 	public void run() {
@@ -21,8 +22,10 @@ public class Forward implements Runnable {
 		B.setSpeed(150);
 		
 		while(!exit) {
+			A.startSynchronization();
 			A.forward();
 			B.forward();
+			A.endSynchronization();
 		}
 		
 		A.startSynchronization();
@@ -31,6 +34,4 @@ public class Forward implements Runnable {
 		A.endSynchronization();
 		
 	}
-	
-	
 }

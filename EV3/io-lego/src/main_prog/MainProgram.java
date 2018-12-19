@@ -70,20 +70,40 @@ public class MainProgram {
 	  
 	  while(tmp != 0){ 
 		  LCD.clear(); 
-		  campo[x][y].reset(); 
+		  campo[x][y].reset();
+		  
+		  Direction robotDir = getDirection();
+		 
 		  if(tmp > 0){
-			  LCD.drawString("GIU", 0, 4); 
+			  
+			  if(robotDir != Direction.DOWN) {
+				  rotate(robotDir);
+			  }
+			  
 			  if(checkObstacle()){  
 				  x = crossObstacle(Direction.DOWN); 
 			  }else{
-				  moveRobot(); x++; 
+				  moveRobot(1); 
+				  x++; 
 			  } 
-		  } else if(tmp < 0){ //DEVO ANDARE SU
-			  LCD.drawString("GIRATI", 0, 4); rotate(Direction.REVERSE); 
+		  } else if(tmp < 0){ //DEVO ANDARE SU			  
+			  
+			  switch(robotDir) {
+				  case DOWN: 
+					  rotate(Direction.REVERSE); break;
+				  case LEFT: 
+					  rotate(Direction.RIGHT); break;
+				  case RIGHT: 
+					  rotate(Direction.LEFT); break;
+				  case REVERSE: 
+					  break;
+				  
+			  }
 			  if(checkObstacle()){
 				  x= crossObstacle(Direction.REVERSE); 
 			  }else{ 
-				  moveRobot(); x--; 
+				  moveRobot(1); 
+				  x--; 
 			  } 
 		  }
 		  campo[x][y].setPosition(); 
@@ -93,27 +113,66 @@ public class MainProgram {
 	  tmp=fy-y; 
 	  while(tmp != 0){ 
 		  LCD.clear(); 
-		  campo[x][y].reset(); 
+		  Direction robotDir = getDirection();
+
+		  campo[x][y].reset();
 		  if(tmp > 0){ 
-			  LCD.drawString("DESTRA", 0, 4); rotate(Direction.RIGHT);
+			  
+			  switch(robotDir) {
+			  case DOWN: 
+				  rotate(Direction.LEFT); break;
+			  case LEFT:
+				  rotate(Direction.REVERSE); break;
+			  case REVERSE:
+				  rotate(Direction.RIGHT); break;
+			  case RIGHT: 
+				  break;
+			  }
+			  
 			  if(checkObstacle()){
 				  y = crossObstacle(Direction.RIGHT);
 			  }else {
-				  moveRobot(); y++; 
+				  moveRobot(1); 
+				  y++; 
 			  }
 		  } else if(tmp < 0){
-			  LCD.drawString("SINISTRA", 0, 4); rotate(Direction.LEFT);
+
+			  switch(robotDir) {
+			  case DOWN: 
+				  rotate(Direction.RIGHT); break;
+			  case LEFT:
+				  break;
+			  case REVERSE:
+				  rotate(Direction.LEFT); break;
+			  case RIGHT: 
+				  rotate(Direction.REVERSE); break;
+			  }
+			  
 			  if(checkObstacle()){
 				  y= crossObstacle(Direction.LEFT);
 			  }else {
-			  moveRobot(); y--;
+			  moveRobot(1); y--;
 			  }
 		  } 
+		  
 		  campo[x][y].setPosition(); 
 		  tmp= fy-y; 
-	  }
-			  
+	  }	  
   }
+	
+	private static Direction getDirection() {
+		int range = 2;
+
+		SampleProvider sp = gyroSensor.getAngleMode();
+		float [] sample = new float[sp.sampleSize()];
+        sp.fetchSample(sample, 0);
+        int angle = ((int)sample[0] + 360)%360;
+        
+        return (angle<=range && angle>=360-range) ? Direction.DOWN :
+        		(angle<=90+range && angle>=90-range) ? Direction.RIGHT :
+        		(angle<=180+range && angle>=180-range) ? Direction.REVERSE:
+        		(angle<=270+range && angle<=270-range) ? Direction.LEFT : null;
+	}
 
 	public static Color checkColor() { 
 
@@ -165,14 +224,10 @@ public class MainProgram {
 		distanceProvider = uSensor.getDistanceMode();
 
 		float[] sample = new float[distanceProvider.sampleSize()];
-		while(true) {
-			distanceProvider.fetchSample(sample, 0);
 	
-			LCD.clear();
-			LCD.drawString(""+sample[0], 0, 4);
-			Delay.msDelay(300);
-		}
-//		return (sample[0] <= DEFAULT_DISTANCE);
+		distanceProvider.fetchSample(sample, 0);
+		return false;
+		//return (sample[0] <= DEFAULT_DISTANCE);
 	}
 
 	// ritorna la riga o colonna dove va il robot
@@ -231,55 +286,61 @@ public class MainProgram {
 	 
 
 	private static void rotate(Direction dir) {
-		gyroThread.reset();
+		Thread t = new Thread(new Rotate(A,B, dir));
+		t.start();
 		
-		RotationController rotate = new RotationController(rotationMonitor, dir, A, B);
-		rotate.start();
-
 		try {
-			rotate.join();
-			Delay.msDelay(1000);
-			return;
+			t.join();
+			Thread.sleep(300);
 			
-		} catch (InterruptedException e) {
-			LCD.clear();
-			LCD.drawString("Excetion rotation", 0, 3);
+			center();
+		} catch(Exception e ) {
+			
 		}
 	}
 
-	private static void moveRobot() {
+	private static void moveRobot(int cells) {
 		float[] colorSample;
 		int r, g, b;
 		Color currentColor = Color.NOT_FOUND;
 
-		Forward forward = new Forward(A,B);
-		Thread f = new Thread(forward, "forward");
-		f.start();
-
-		try {
-			Thread.sleep(3000);
-		
-			do {
-				colorSample = new float[colorProvider.sampleSize()];
-				colorProvider.fetchSample(colorSample, 0);
-				r = (int) (colorSample[0] * 10 * 255);
-				g = (int) (colorSample[1] * 10 * 255);
-				b = (int) (colorSample[2] * 10 * 255);
+		while(cells!=0) {
+			Forward forward = new Forward(A,B);
+			Thread f = new Thread(forward, "forward");
+			f.start();
 	
-				currentColor = ColorsRGB.getColor(r, g, b);
-			} while (currentColor != Color.BLACK);
-
-			forward.stop();
-	
-			reset();
+			try {
+				Thread.sleep(3000);
 			
-			return;
-				
-		} catch (Exception e) {
-			LCD.clear();
-			LCD.drawString("Excetion moving", 0, 3);
+				do {
+					colorSample = new float[colorProvider.sampleSize()];
+					colorProvider.fetchSample(colorSample, 0);
+					r = (int) (colorSample[0] * 10 * 255);
+					g = (int) (colorSample[1] * 10 * 255);
+					b = (int) (colorSample[2] * 10 * 255);
+		
+					currentColor = ColorsRGB.getColor(r, g, b);
+				} while (currentColor != Color.BLACK);
+	
+				forward.stop();
+				Thread.sleep(300);
+				center();
 
+			} catch (Exception e) {
+				LCD.clear();
+				LCD.drawString("Excetion moving", 0, 3);
+			}
+			
+			cells--;
 		}
+		
+		try {
+			Thread.sleep(300);
+			reset();
+		}catch(Exception e) {
+			
+		}
+		
 	}
 	
 	public static void reset() {
@@ -290,6 +351,17 @@ public class MainProgram {
 			return;
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public static void center() {
+		Thread c = new Thread(new Center(A,B,gyroSensor));
+		c.start();
+		
+		try {
+			c.join();
+		}catch(Exception e) {
+			
 		}
 	}
 
@@ -433,10 +505,11 @@ public class MainProgram {
 		} while (!set);
 
 		A.synchronizeWith(new RegulatedMotor[] { B });
-		rotationMonitor = new utils.RotationMonitor();
 		
-		gyroThread = new GyroscopeThread(gyroSensor, rotationMonitor);
-		gyroThread.start();
+//		rotationMonitor = new utils.RotationMonitor();
+//		
+//		gyroThread = new GyroscopeThread(gyroSensor, rotationMonitor);
+//		gyroThread.start();
 	}
 
 
@@ -454,13 +527,22 @@ public class MainProgram {
 		x = 0;
 		y = 0;
 		campo[x][y].setPosition();
+		g.receivedInput();
 		
-		Delay.msDelay(3000);
-		
-		
-//		moveRobot();
+//		moveRobot(1);
 //		rotate(Direction.RIGHT);
-//		moveRobot();
+//		moveRobot(1);
+//		rotate(Direction.LEFT);
+//		moveRobot(2);
+//
+//		rotate(Direction.LEFT);
+//		moveRobot(1);
+//		rotate(Direction.LEFT);
+//		moveRobot(3);
+//		rotate(Direction.REVERSE);
+		
+		moveTo(1, 3);
+		
 //		rotate(Direction.REVERSE);
 //		moveRobot();
 //		rotate(Direction.REVERSE);
@@ -471,23 +553,23 @@ public class MainProgram {
 		
 //		moveTo(1,0);
 
-		g.btWait();
-		final BluetoothConnector bt = new BluetoothConnector();
-		g.btConnect();
-		
-// 		send battery status periodically
-		sendBatteryInfo(bt);
-
-		try {
-			Thread.sleep(10000);
-		} catch(Exception e) {
-			
-		}
+//		g.btWait();
+//		final BluetoothConnector bt = new BluetoothConnector();
+//		g.btConnect();
+//		
+//// 		send battery status periodically
+//		sendBatteryInfo(bt);
+//
+//		try {
+//			Thread.sleep(10000);
+//		} catch(Exception e) {
+//			
+//		}
 		
 //		 start thread for always listening at input from app
 //		readAndParse(bt);
 
-		System.exit(0);
+//		System.exit(0);
 		/*
 		 * 
 		 * // start searching
