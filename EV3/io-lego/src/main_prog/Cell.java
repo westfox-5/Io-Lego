@@ -6,10 +6,15 @@ public class Cell {
 
     private Color color;
     public boolean isHere;
-
-    public Cell(){
+    public boolean visited;
+    
+    public int x, y;
+    
+    public Cell(int x, int y){
+    	this.x = x; this.y = y;
         this.color = null;
         this.isHere = false;
+        this.visited = false;
     }
 
     public void setPosition(){
@@ -30,6 +35,14 @@ public class Cell {
     
     public boolean hasColor() {
         return this.color!=null;
+    }
+    
+    public boolean isVisited() {
+    	return this.visited;
+    }
+    
+    public void setVisited(boolean v) {
+    	this.visited = v;
     }
 
 }

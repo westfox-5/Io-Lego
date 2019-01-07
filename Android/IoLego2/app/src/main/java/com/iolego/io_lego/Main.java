@@ -33,7 +33,7 @@ public class Main extends AppCompatActivity {
             END_STRING = "999";
 
     private static final int
-            ROWS = 5,
+            ROWS = 4,
             COLS = 4;
 
     private static final float
@@ -264,6 +264,7 @@ public class Main extends AppCompatActivity {
                 map[x][y] = 0;
                 break;
         }
+
         colorChooseDialog.hide();
     }
 
