@@ -24,4 +24,14 @@
 
     <string name="start_search">start search!</string>
     <string name="break_search">end search!</string>
+    <string name="error_no_path">There are no paths for this position!</string>
+    <string name="error_no_prev_path">There are no paths for another position!</string>
+
+    <string name="info_place_color">Click on a cell to place a color</string>
+    <string name="info_cannot_remove_robot">Cannot remove the robot, move it first</string>
+    <string name="searching">Searching\.\.\.</string>
+    <string name="search_interrupted">Search ended</string>
+
+    <string name="connect_mac">Connect using MAC (%s)</string>
+    <string name="connect_id">Connect using ID (%s)</string>
 </resources>

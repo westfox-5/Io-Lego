@@ -19,8 +19,8 @@ import java.util.Set;
 
 public class BluetoothConnection extends Service {
     private static final String TAG= "BLUETOOTH_ACTIVITY";
-    private static String MAC_ADDRESS = null;
-    private static final String ID_LEGO = "EV3";
+    protected static String MAC_ADDRESS = "00:16:53:5E:EB:5E";
+    protected static String ID_LEGO = "EV3";
     private final IBinder bluetoothBinder = new BluetoothBinder();
 
     private OutputStream outputStream;
@@ -47,13 +47,13 @@ public class BluetoothConnection extends Service {
         return super.onUnbind(intent);
     }
 
-    int connect() throws IOException {
+    int connect(boolean useMAC) throws IOException {
         InputStream inputStream;
 
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
         if (blueAdapter != null) {
             if (blueAdapter.isEnabled()) { // check if bt is enabled
-                if(MAC_ADDRESS != null) { // already paired? no need to search for it
+                if(socket != null) { // already paired? no need to search for it
                     socket.connect();
                     Log.w(TAG, "Device connected. MAC " + MAC_ADDRESS);
                     outputStream = socket.getOutputStream();
@@ -65,7 +65,7 @@ public class BluetoothConnection extends Service {
 
                 }else {
                     Set<BluetoothDevice> bondedDevices = blueAdapter.getBondedDevices();
-                    BluetoothDevice device = searchDevice(bondedDevices); // search for exactly the EV3
+                    BluetoothDevice device = searchDevice(bondedDevices, false); // search for exactly the EV3
                     if (device != null) {
                         ParcelUuid[] uuids = device.getUuids();
 
@@ -91,11 +91,17 @@ public class BluetoothConnection extends Service {
         return 3;
     }
 
-    private BluetoothDevice searchDevice(Set<BluetoothDevice> devices) {
+    private BluetoothDevice searchDevice(Set<BluetoothDevice> devices, boolean useMAC) {
         for (BluetoothDevice device : devices) {
             String deviceName = device.getName();
-            if (deviceName.equals(ID_LEGO)) {
+            String deviceMAC = device.getAddress();
+            if (!useMAC && deviceName.equals(ID_LEGO)) {
                 MAC_ADDRESS = device.getAddress();
+                return device;
+            }
+
+            if(useMAC && deviceMAC.equals(MAC_ADDRESS)){
+                ID_LEGO = deviceName;
                 return device;
             }
         }
@@ -103,7 +109,7 @@ public class BluetoothConnection extends Service {
     }
 
     public void send(String str) throws IOException {
-        Log.d("Sent to EV3", str);
+        Log.d(TAG, str);
         outputStream.write(str.getBytes(Charset.forName("UTF-8")));
         outputStream.write("\0".getBytes());
     }

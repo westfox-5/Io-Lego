@@ -6,50 +6,36 @@
     android:background="@color/colorPrimary"
     android:orientation="vertical"
     android:weightSum="1"
-    android:padding="5dp">
+    android:padding="8dp">
 
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_margin="5dp"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight=".20"
-        android:text="CHOOSE THE COLOR"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="25dp" />
 
     <LinearLayout
 
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:orientation="horizontal"
-        android:weightSum="1"
-        android:layout_weight=".27"
-        >
+        android:layout_margin="3dp"
+        android:layout_weight=".25">
 
-    <Button
-        android:layout_weight=".5"
-        android:id="@+id/yellow"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:background="@color/yellow"
-        android:onClick="setColor"
-        android:textSize="16dp"
-        android:text="YELLOW" />
+        <Button
+            android:id="@+id/yellow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/yellow"
+            android:onClick="setColor"
+            android:textSize="16sp"
+            android:text="YELLOW" />
 
-    <Button
-        android:layout_weight=".5"
-        android:id="@+id/blue"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:background="@color/blue"
-        android:onClick="setColor"
-        android:textSize="16dp"
-        android:text="BLUE" />
+        <Button
+            android:id="@+id/blue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/blue"
+            android:onClick="setColor"
+            android:textSize="16sp"
+            android:text="BLUE" />
 
     </LinearLayout>
 
@@ -58,43 +44,51 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight=".27"
-        android:weightSum="1">
+        android:layout_margin="3dp"
+        android:layout_weight=".25">
 
-    <Button
-        android:layout_weight=".5"
-        android:id="@+id/green"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:background="@color/green"
-        android:onClick="setColor"
-        android:textSize="16dp"
-        android:text="GREEN" />
+        <Button
+            android:id="@+id/green"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/green"
+            android:onClick="setColor"
+            android:textSize="16sp"
+            android:text="GREEN" />
 
-    <Button
-        android:layout_weight=".5"
-        android:id="@+id/red"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:background="@color/red"
-        android:onClick="setColor"
-        android:textSize="16dp"
-        android:text="@string/color_red" />
+        <Button
+            android:id="@+id/red"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/red"
+            android:onClick="setColor"
+            android:textSize="16sp"
+            android:text="@string/color_red" />
     </LinearLayout>
 
     <Button
-        android:layout_weight="0.24"
+        android:layout_weight="0.25"
+        android:id="@+id/robot"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="3dp"
+        android:background="@color/darker_grey"
+        android:onClick="setColor"
+        android:textSize="16sp"
+        android:text="robot" />
+
+    <Button
+        android:layout_weight="0.25"
         android:id="@+id/undo"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="5dp"
-        android:background="@android:color/white"
+        android:layout_margin="4dp"
+        android:background="@color/white"
         android:onClick="setColor"
-        android:textSize="16dp"
+        android:textSize="16sp"
         android:text="undo" />
-
 
 
 </LinearLayout>

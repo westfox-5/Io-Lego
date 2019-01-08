@@ -72,10 +72,12 @@
                 android:progressDrawable="@drawable/progress_bar" />
 
             <TextView
+                android:background="@drawable/info_text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:text="Searching..."
+                android:id="@+id/infoTXT"
+                android:textColor="@color/white"
                 android:textSize="18sp" />
 
         </RelativeLayout>

@@ -44,80 +44,68 @@ public class MainProgram {
 
 	/*---- MOVING FUNCTIONS --------------------------------------*/
 
-	public static void moveX_D(int fx) {
-		int tmp = fx - robot_x;
+	public static void moveX_D(int distance) {
+		map[robot_x][robot_y].reset();
 
-		while (tmp != 0) {
-			map[robot_x][robot_y].reset();
+		rotateTo(Direction.DOWN);
 
-			rotateTo(Direction.DOWN);
+		moveRobot(distance);
+		robot_x+=distance;
 
-			moveRobot(1);
-			robot_x++;
+		map[robot_x][robot_y].setPosition();
 
-			map[robot_x][robot_y].setPosition();
-			tmp = fx - robot_x;
-		}
 	}
 
-	public static void moveX_Up(int fx) {
-		int tmp = fx - robot_x;
-		while (tmp != 0) {
-			map[robot_x][robot_y].reset();
+	public static void moveX_Up(int distance) {
+		map[robot_x][robot_y].reset();
 
-			rotateTo(Direction.REVERSE);
+		rotateTo(Direction.REVERSE);
 
-			moveRobot(1);
-			robot_x--;
-
-			map[robot_x][robot_y].setPosition();
-			tmp = fx - robot_x;
-		}
+		moveRobot(distance);
+		robot_x-=distance;
+		
+		map[robot_x][robot_y].setPosition();
+	
 	}
 
-	public static void moveY_L(int fy) {
-		int tmp = fy - robot_y;
+	public static void moveY_L(int distance) {
 
-		while (tmp != 0) {
-			map[robot_x][robot_y].reset();
+		map[robot_x][robot_y].reset();
 
-			rotateTo(Direction.RIGHT);
+		rotateTo(Direction.RIGHT);
 
-			moveRobot(1);
-			robot_y++;
+		moveRobot(distance);
+		robot_y+=distance;
 
-			map[robot_x][robot_y].setPosition();
-			tmp = fy - robot_y;
-		}
+		map[robot_x][robot_y].setPosition();
 	}
 
-	public static void moveY_R(int fy) {
-		int tmp = fy - robot_y;
+	public static void moveY_R(int distance) {
 
-		while (tmp != 0) {
-			map[robot_x][robot_y].reset();
+		map[robot_x][robot_y].reset();
 
-			rotateTo(Direction.LEFT);
+		rotateTo(Direction.LEFT);
 
-			moveRobot(1);
-			robot_y--;
+		moveRobot(1);
+		robot_y--;
 
-			map[robot_x][robot_y].setPosition();
-			tmp = fy - robot_y;
-		}
+		map[robot_x][robot_y].setPosition();
 	}
 
 	public static void moveTo(int fx, int fy) {
 
-		if (fx - robot_x < 0)
-			moveX_Up(fx);
+		int distance_x = fx-robot_x;
+		int distance_y = fy-robot_y;
+		
+		if (distance_x < 0)
+			moveX_Up(distance_x);
 		else
-			moveX_D(fx);
+			moveX_D(distance_x);
 
-		if (fy - robot_y < 0)
-			moveY_R(fy);
+		if (distance_y < 0)
+			moveY_R(distance_y );
 		else
-			moveY_L(fy);
+			moveY_L(distance_y);
 
 		try {
 			Thread.sleep(300);
@@ -327,10 +315,19 @@ public class MainProgram {
 							continue;
 						}
 
+						// robot position
+						if(t.substring(0,1).equals("R")) {
+							robot_x = Integer.parseInt(t.substring(1, 2));
+							robot_y = Integer.parseInt(t.substring(2, 3));
+							map[robot_x][robot_y].setPosition();
+							continue;
+						}
+						
 						int xt = Integer.parseInt(t.substring(0, 1));
 						int yt = Integer.parseInt(t.substring(1, 2));
 						int c = Integer.parseInt(t.substring(2, 3));
 						Color col;
+						
 						switch (c) {
 						case 1:
 							col = Color.YELLOW;

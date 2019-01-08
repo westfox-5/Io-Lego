@@ -9,7 +9,9 @@
     <color name="yellow">#F9A825</color>
     <color name="white">#ffffff</color>
     <color name="light_grey">#D3D3D3</color>
+    <color name="darker_grey">#6e6e6e</color>
     <color name="black">#000000</color>
+
 
     <color name="black_overlay">#66000000</color>
 

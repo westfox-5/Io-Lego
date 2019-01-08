@@ -21,6 +21,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -43,9 +44,9 @@ public class Main extends AppCompatActivity {
 
     private ImageButton b;
     private Button btnMain;
+    private TextView infoTxt;
     private ImageView bluetoothImage, batteryImage;
-    private View progressLayout;
-    private int map[][], x, y, checkedCells;
+    private int map[][], x, y, checkedCells, robot_x, robot_y;
     public Dialog colorChooseDialog, reconnectDialog;
     private ProgressBar bar;
 
@@ -121,17 +122,32 @@ public class Main extends AppCompatActivity {
         bar = findViewById(R.id.prog_bar);
         bluetoothImage = findViewById(R.id.bluetoothImg);
         batteryImage = findViewById(R.id.batteryImg);
-        progressLayout = findViewById(R.id.relProgbar);
-        progressLayout.setVisibility(View.INVISIBLE);
         btnMain = findViewById(R.id.startBtn);
+        infoTxt = findViewById(R.id.infoTXT);
 
+        infoTxt.setText(R.string.info_place_color);
+        bar.setVisibility(View.INVISIBLE);
+
+        Path.ROWS = ROWS;
+        Path.COLS = COLS;
+
+        robot_x = 0;
+        robot_y = 0;
+        findViewById(
+                getResources().getIdentifier("b" + robot_x + "" + robot_y, "id", getPackageName())
+        ).setBackgroundColor(ContextCompat.getColor(this, R.color.darker_grey));
         map = new int[ROWS][COLS];
+        Path.matrix = new int[ROWS][COLS];
         for (int i = 0; i < ROWS; i++) {
             map[i] = new int[COLS];
+            Path.matrix[i] = new int[COLS];
             for (int j = 0; j < COLS; j++) {
                 map[i][j] = 0;
+                Path.matrix[i][j] = 3;
             }
         }
+
+        map[robot_x][robot_y] = -1;
 
         btnMain.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -163,7 +179,9 @@ public class Main extends AppCompatActivity {
 
     private void startSearch() {
         int numberOfCells = 0;
-        String message = "";
+        /* initial position of robot: Rxy&*/
+        String message = "R".concat(String.valueOf(robot_x))
+                .concat(String.valueOf(robot_y)).concat("&");
 
         /* change btnMain */
         btnMain.setText(getResources().getString(R.string.break_search));
@@ -171,11 +189,12 @@ public class Main extends AppCompatActivity {
 
         /* create the string as ROW|COL|COLOR|& */
         for (int i = 0; i < ROWS; i++) {
-            for (int j = 0; i < COLS; i++) {
-                if (map[i][j] != 0) {
+            for (int j = 0; j < COLS; j++) {
+                if (map[i][j] > 0) {
                     message = message.concat(String.valueOf(i))
                             .concat(String.valueOf(j))
                             .concat(String.valueOf(map[i][j]) + '&');
+
                     numberOfCells++;
                 }
             }
@@ -186,10 +205,12 @@ public class Main extends AppCompatActivity {
             if (bluetoothBound) {
                 bt.send(message);
 
-                /* update UI */
-                progressLayout.setVisibility(View.VISIBLE);
-                bar.setProgress(0);
+                //* update UI *//*
+                bar.setVisibility(View.VISIBLE);
+                bar.setProgress(1);
                 bar.setMax(numberOfCells);
+                infoTxt.setBackground(null);
+                infoTxt.setText(R.string.searching);
 
                 btConnected = true;
             }
@@ -210,6 +231,11 @@ public class Main extends AppCompatActivity {
         try {
             bt.send("999&");
             btConnected = true;
+
+            bar.setVisibility(View.INVISIBLE);
+            bar.setProgress(0);
+            infoTxt.setBackground(ContextCompat.getDrawable(this, R.drawable.info_text));
+            infoTxt.setText(R.string.search_interrupted);
         } catch (IOException e) {
             Toast.makeText(this, getResources().getText(R.string.error_send), Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Cannot send to EV3!");
@@ -222,47 +248,165 @@ public class Main extends AppCompatActivity {
 
     }
 
+    private boolean previous_paths() {
+
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                if (Path.matrix[i][j] == 0) {
+                    Path.matrix[i][j] = 2;
+                    if (!Path.isPath()) {
+                        Path.matrix[i][j]=0;
+                        return false;
+                    }
+                    Path.matrix[i][j]=0;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private int available(int u, int v) {
+        Path.matrix[robot_x][robot_y] = 1;
+        Path.matrix[u][v] = 2;
+        if (Path.isPath()) {
+            Path.matrix[u][v]=0;
+            if (previous_paths()) {
+                return 0;
+            } else {
+                Path.matrix[u][v] = 3;
+                return 1; // no path for other
+            }
+        } else {
+            Path.matrix[u][v] = 3;
+            return 2; // no path for this
+        }
+    }
+
     public void chooseColor(View view) {
         b = (ImageButton) view;
+
         String id = getResources().getResourceEntryName(view.getId());
         x = id.charAt(1) - '0';
         y = id.charAt(2) - '0';
         colorChooseDialog.show();
     }
 
+    private void check_cells(){
+
+       // Path.print();
+        for(int u = 0; u<ROWS; u++){
+            for(int v = 0; v<COLS; v++){
+
+                if(map[u][v]>0){
+                    int ris = available(u, v);
+
+                    if(ris==1 || ris==2) { //no longer a path to this cell
+                        findViewById(
+                                getResources().getIdentifier("b" + u + "" + v, "id", getPackageName())
+                        ).setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
+                        map[u][v] = 0;
+                        Path.matrix[u][v] = 3;
+
+                    }
+                }
+            }
+        }
+    }
+
     public void setColor(View view) {
+
         String id = getResources().getResourceEntryName(view.getId());
 
-        switch (id) {
-            case "yellow":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
-                Log.d(TAG_COLOR, "Yellow in " + x + y);
-                map[x][y] = 1;
-                break;
+        //always can place the robot
+        if(id.equals("robot")){
+            Log.d(TAG_COLOR, "Robot in " + x + y);
 
-            case "blue":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.blue));
-                Log.d(TAG_COLOR, "Blue in " + x + y);
-                map[x][y] = 2;
-                break;
+            // reset the previous robot cell
+            map[robot_x][robot_y] = 0;
+            Path.matrix[robot_x][robot_y] = 3;
+            findViewById(
+                    getResources().getIdentifier("b" + robot_x + "" + robot_y, "id", getPackageName())
+            ).setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
 
-            case "green":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
-                Log.d(TAG_COLOR, "Green in " + x + y);
-                map[x][y] = 3;
-                break;
+            // update robot position
+            robot_x = x;
+            robot_y = y;
+            map[x][y] = -1;
+            Path.matrix[x][y] = 1;
+            b.setBackgroundColor(ContextCompat.getColor(this, R.color.darker_grey));
 
-            case "red":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.red));
-                Log.d(TAG_COLOR, "Red in " + x + y);
-                map[x][y] = 4;
-                break;
 
-            case "undo":
-                b.setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
-                Log.d(TAG_COLOR, "Undo in " + x + y);
-                map[x][y] = 0;
-                break;
+            check_cells();
+
+        } else {
+            int ris = available(x, y);
+
+            if(id.equals("undo")){
+                //cannot remove robot
+                if(map[x][y] != -1) {
+                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
+                    Log.d(TAG_COLOR, "Undo in " + x + y);
+                    map[x][y] = 0;
+                    Path.matrix[x][y] = 3;
+                }else {
+                    infoTxt.setText(R.string.info_cannot_remove_robot);
+                }
+
+                colorChooseDialog.hide();
+                return;
+            }
+
+
+            if(ris==1) { //no path to previous cell
+                infoTxt.setTextColor(ContextCompat.getColor(this, R.color.red));
+                infoTxt.setText(R.string.error_no_prev_path);
+
+                infoTxt.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        infoTxt.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
+                        infoTxt.setText(R.string.info_place_color);
+                    }
+                }, 2000);
+            }else if(ris==2){ //no path to this cell
+                infoTxt.setTextColor(ContextCompat.getColor(this, R.color.red));
+                infoTxt.setText(R.string.error_no_path);
+
+                infoTxt.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        infoTxt.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
+                        infoTxt.setText(R.string.info_place_color);
+                    }
+                }, 2000);
+            } else { //can insert a color
+                switch (id) {
+                    case "yellow":
+                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
+                        Log.d(TAG_COLOR, "Yellow in " + x + y);
+                        map[x][y] = 1;
+                        break;
+
+                    case "blue":
+                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.blue));
+                        Log.d(TAG_COLOR, "Blue in " + x + y);
+                        map[x][y] = 2;
+                        break;
+
+                    case "green":
+                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
+                        Log.d(TAG_COLOR, "Green in " + x + y);
+                        map[x][y] = 3;
+                        break;
+
+                    case "red":
+                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.red));
+                        Log.d(TAG_COLOR, "Red in " + x + y);
+                        map[x][y] = 4;
+                        break;
+                }
+            }
         }
 
         colorChooseDialog.hide();
@@ -383,7 +527,7 @@ public class Main extends AppCompatActivity {
             public void run() {
                 int ris;
                 try {
-                    ris = bt.connect();
+                    ris = bt.connect(true);
                 } catch (IOException e) {
                     ris = -1;
                     btConnected = false;
@@ -450,4 +594,5 @@ public class Main extends AppCompatActivity {
         }
         super.onDestroy();
     }
+
 }

@@ -10,12 +10,14 @@ import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,14 +32,15 @@ public class SplashScreen extends AppCompatActivity {
     private TextView btConnTXT;
     private ProgressBar bar;
     private Handler barHandler;
+    private Button connectMAC, connectID;
 
     private Runnable
             hide_bar = new Runnable() {
-        @Override
-        public void run() {
-            bar.setVisibility(View.GONE);
-        }
-    },
+                @Override
+                public void run() {
+                    bar.setVisibility(View.GONE);
+                }
+            },
             show_bar = new Runnable() {
                 @Override
                 public void run() {
@@ -54,15 +57,6 @@ public class SplashScreen extends AppCompatActivity {
 
             bt = binder.getService();
 
-            barHandler.post(show_bar);
-
-            new Handler().postDelayed(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            connect();
-                        }
-                    }, 500);
         }
 
         @Override
@@ -78,6 +72,8 @@ public class SplashScreen extends AppCompatActivity {
 
         btConnTXT = findViewById(R.id.connectTXT);
         bar = findViewById(R.id.progressBar);
+        connectID = findViewById(R.id.connectID);
+        connectMAC = findViewById(R.id.connectMAC);
 
         barHandler = new Handler();
 
@@ -90,15 +86,59 @@ public class SplashScreen extends AppCompatActivity {
         startService(btIntent);
         bindService(btIntent, btService, Context.BIND_AUTO_CREATE);
 
+        //set text on buttons
+        connectMAC.setText(getResources().getString(R.string.connect_mac, BluetoothConnection.MAC_ADDRESS));
+        connectID.setText(getResources().getString(R.string.connect_id, BluetoothConnection.ID_LEGO));
+
+        connectID.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                btConnTXT.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        bar.setVisibility(View.VISIBLE);
+                        bar.setIndeterminate(true);
+
+                        btConnTXT.setVisibility(View.VISIBLE);
+                        btConnTXT.setText(getResources().getString(R.string.bt_pairing));
+
+                        connect(false);
+                    }
+                });
+
+            }
+        });
+
+        connectMAC.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                btConnTXT.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        bar.setVisibility(View.VISIBLE);
+                        bar.setIndeterminate(true);
+
+                        btConnTXT.setText(getResources().getString(R.string.bt_pairing));
+                        btConnTXT.setVisibility(View.VISIBLE);
+
+                        connect(true);
+                    }
+                });
+            }
+        });
 
     }
 
-    private void connect() {
+    private void connect(boolean useMAC) {
         if (reconnectDialog.isShowing()) reconnectDialog.dismiss();
+
+        connectMAC.setClickable(false);
+        connectID.setClickable(false);
+
         int ris;
         try {
-            ris = bt.connect();
-        } catch (IOException e) {
+            ris = bt.connect(useMAC);
+        } catch (Exception e) {
             ris = -1;
         }
         switch (ris) {
@@ -111,9 +151,6 @@ public class SplashScreen extends AppCompatActivity {
                         btConnTXT.setText(getResources().getString(R.string.bt_connected));
                     }
                 });
-
-                barHandler.removeCallbacks(show_bar);
-                barHandler.post(hide_bar);
 
                 new Handler().postDelayed(new Runnable() {
                     @Override
@@ -137,7 +174,7 @@ public class SplashScreen extends AppCompatActivity {
 
                 reconnectDialog.show();
                 break;
-            case 2: // bt non acceso
+            case 2: // bt not enabled
                 btConnTXT.post(new Runnable() {
                     @Override
                     public void run() {
@@ -148,10 +185,16 @@ public class SplashScreen extends AppCompatActivity {
                 barHandler.removeCallbacks(show_bar);
                 barHandler.post(hide_bar);
 
+                connectMAC.setClickable(true);
+                connectID.setClickable(true);
+
                 enableBluetooth();
                 break;
             case 3: // no bt adapter
                 Log.e(TAG, "Fatal error");
+
+                connectMAC.setClickable(true);
+                connectID.setClickable(true);
                 createDialog(
                         getResources().getString(R.string.alert_fatal_error_title),
                         getResources().getString(R.string.alert_fatal_error_text), null)
@@ -179,7 +222,6 @@ public class SplashScreen extends AppCompatActivity {
                         public void run() {
                             barHandler.removeCallbacks(hide_bar);
                             barHandler.post(show_bar);
-                            connect();
                         }
                     });
             }
