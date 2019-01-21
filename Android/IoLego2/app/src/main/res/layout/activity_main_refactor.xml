@@ -44,7 +44,9 @@
                 android:layout_weight="0.8"
                 android:layout_height="match_parent"
                 android:gravity="center"
+                android:textColor="@color/red"
                 android:text="@string/app_name"
+                android:textStyle="italic"
                 android:textSize="40sp" />
 
             <ImageView

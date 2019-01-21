@@ -249,7 +249,7 @@ public class SplashScreen extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 0) {
+        if (resultCode == -1) {
             Toast.makeText(this, getResources().getString(R.string.bt_enable), Toast.LENGTH_SHORT).show();
             btConnTXT.setText(R.string.bt_pairing);
             reconnectDialog.show();

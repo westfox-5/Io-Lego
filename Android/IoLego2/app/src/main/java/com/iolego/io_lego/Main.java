@@ -47,7 +47,7 @@ public class Main extends AppCompatActivity {
     private TextView infoTxt;
     private ImageView bluetoothImage, batteryImage;
     private int map[][], x, y, checkedCells, robot_x, robot_y;
-    public Dialog colorChooseDialog, reconnectDialog;
+    public Dialog colorChooseDialog;
     private ProgressBar bar;
 
     private boolean
@@ -101,11 +101,6 @@ public class Main extends AppCompatActivity {
         Intent btIntent = new Intent(this, BluetoothConnection.class);
         startService(btIntent);
         bindService(btIntent, btService, Context.BIND_AUTO_CREATE);
-
-        /* reconnect dialog creation */
-        reconnectDialog = new Dialog(this);
-        reconnectDialog.setContentView(R.layout.reconnect);
-        Objects.requireNonNull(reconnectDialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         /* choose color creation */
         colorChooseDialog = new Dialog(this);

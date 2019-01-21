@@ -62,6 +62,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
+
             android:background="@color/red"
             android:onClick="setColor"
             android:textSize="16sp"
@@ -77,7 +78,7 @@
         android:background="@color/darker_grey"
         android:onClick="setColor"
         android:textSize="16sp"
-        android:text="robot" />
+        android:text="ROBOT" />
 
     <Button
         android:layout_weight="0.25"
@@ -88,7 +89,7 @@
         android:background="@color/white"
         android:onClick="setColor"
         android:textSize="16sp"
-        android:text="undo" />
+        android:text="UNDO" />
 
 
 </LinearLayout>

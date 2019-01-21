@@ -74,7 +74,8 @@
             android:layout_height="match_parent"
             android:layout_margin="3dp"
             android:layout_weight="0.5"
-            style="@style/connectButtons"
+            android:elegantTextHeight="true"
+            android:theme="@style/PrimaryFlatButton"
             android:text="@string/connect_mac" />
 
         <Button
@@ -83,8 +84,7 @@
             android:layout_height="match_parent"
             android:layout_margin="3dp"
             android:layout_weight="0.5"
-            style="@style/connectButtons"
-            android:background="@drawable/connect_buttons"
+            android:theme="@style/PrimaryFlatButton"
             android:text="@string/connect_id" />
     </LinearLayout>
 
