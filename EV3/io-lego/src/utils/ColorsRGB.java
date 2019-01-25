@@ -5,10 +5,10 @@ import main_prog.MainProgram.Color;
 public class ColorsRGB {
 	
 	private static int[] 
-			RED=	{200, 90,  90},
-			GREEN= 	{80,  100, 80},
-			BLUE= 	{80,  100, 200},
-			YELLOW= {200, 100, 70},
+			RED=	{500, 100,  100},
+			GREEN= 	{135,  370, 90},
+			BLUE= 	{100,  375, 285},
+			YELLOW= {500, 450, 140},
 			BLACK=  {65,  65,  65};
 	
 	public static Color getColor(int r, int g, int b) {

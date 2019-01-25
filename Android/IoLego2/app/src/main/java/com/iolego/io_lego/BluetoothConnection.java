@@ -52,11 +52,12 @@ public class BluetoothConnection extends Service {
 
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
         if (blueAdapter != null) {
-            if (blueAdapter.isEnabled()) { // check if bt is enabled
-                if(socket != null) { // already paired? no need to search for it
+            if (blueAdapter.isEnabled()) {
+                if(socket != null) {
                     socket.connect();
                     Log.w(TAG, "Device connected. MAC " + MAC_ADDRESS);
                     outputStream = socket.getOutputStream();
+                    outputStream.flush();
                     inputStream = socket.getInputStream();
 
                     inputReader = new InputStreamReader(inputStream);
@@ -110,9 +111,17 @@ public class BluetoothConnection extends Service {
 
     public void send(String str) throws IOException {
         Log.d(TAG, str);
+        Log.d(TAG,str.getBytes(Charset.forName("UTF-8")).length+"");
+
+        while(str.getBytes(Charset.forName("UTF-8")).length < 256){
+           str += " ";
+        }
+
         outputStream.write(str.getBytes(Charset.forName("UTF-8")));
         outputStream.write("\0".getBytes());
+        outputStream.flush();
     }
+
 
     String read() throws IOException {
         int bytesRead;

@@ -3,12 +3,14 @@ package utils;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
 import lejos.remote.nxt.BTConnection;
 import lejos.remote.nxt.BTConnector;
 import lejos.remote.nxt.NXTConnection;
+import lejos.utility.Delay;
 
 public class BluetoothConnector {
     protected DataInputStream inputStream;
@@ -32,8 +34,10 @@ public class BluetoothConnector {
         InputStreamReader dataInputStream = new InputStreamReader(inputStream);
         int bytesRead;
         char[] buffer = new char[256];
+        
+        bytesRead = dataInputStream.read(buffer, 0, 256);
 
-        bytesRead = dataInputStream.read(buffer, 0, 4);
-    	return new String(buffer, 0, bytesRead);
+        return new String(buffer, 0, bytesRead);
+        
     }
 }

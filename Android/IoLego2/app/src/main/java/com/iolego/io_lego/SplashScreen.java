@@ -216,15 +216,7 @@ public class SplashScreen extends AppCompatActivity {
         if(retry!=null)
             build.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                    new Handler().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            barHandler.removeCallbacks(hide_bar);
-                            barHandler.post(show_bar);
-                        }
-                    });
-            }
+            public void onClick(DialogInterface dialog, int which) { dialog.dismiss();}
             });
         build.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
             @Override

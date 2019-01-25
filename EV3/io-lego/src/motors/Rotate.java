@@ -14,22 +14,22 @@ public class Rotate implements Runnable {
 	
 	@Override
 	public void run() {
-		A.setSpeed(80);
-		B.setSpeed(80);
+		A.setSpeed(100);
+		B.setSpeed(100);
 		
 		int rotA, rotB;
 		switch(dir) {
 		case RIGHT:
-			rotA = 147;
-			rotB = -147;
+			rotA = 150;
+			rotB = -150;
 			break;
 		case LEFT:
-			rotA = -147;
-			rotB = 147;
+			rotA = -150;
+			rotB = 150;
 			break;
-		case REVERSE:
-			rotA = 292;
-			rotB = -292;
+		case UP:
+			rotA = 295;
+			rotB = -295;
 			break;
 		default: 
 			rotA=0;

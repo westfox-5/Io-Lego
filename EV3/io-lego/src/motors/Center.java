@@ -9,10 +9,10 @@ public class Center implements Runnable {
 	private RegulatedMotor A, B;
 	private SampleProvider sp;
 
-	private int rot = 9;
+	private int rot = 9 ;
 
 	private int range = 2;
-	private int rotRange = 10;
+	private int rotRange = 15;
 
 	public Center(RegulatedMotor A, RegulatedMotor B, EV3GyroSensor gyro) {
 		this.A = A;

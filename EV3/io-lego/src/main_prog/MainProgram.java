@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lejos.hardware.Battery;
 import lejos.hardware.BrickFinder;
+import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3GyroSensor;
@@ -23,7 +24,7 @@ public class MainProgram {
 	}
 
 	public enum Direction {
-		REVERSE, LEFT, RIGHT, DOWN
+		UP, LEFT, RIGHT, DOWN
 	}
 
 	static boolean set;
@@ -39,79 +40,87 @@ public class MainProgram {
 
 	private static int robot_x, robot_y;
 	private static SampleProvider colorProvider;
+	
+	private static BluetoothConnector bt;
 
 	private static LegoGraphics g;
 
 	/*---- MOVING FUNCTIONS --------------------------------------*/
 
-	public static void moveX_D(int distance) {
-		map[robot_x][robot_y].reset();
-
-		rotateTo(Direction.DOWN);
-
-		moveRobot(distance);
-		robot_x+=distance;
-
-		map[robot_x][robot_y].setPosition();
-
-	}
-
-	public static void moveX_Up(int distance) {
-		map[robot_x][robot_y].reset();
-
-		rotateTo(Direction.REVERSE);
-
-		moveRobot(distance);
-		robot_x-=distance;
-		
-		map[robot_x][robot_y].setPosition();
-	
-	}
-
-	public static void moveY_L(int distance) {
-
-		map[robot_x][robot_y].reset();
-
-		rotateTo(Direction.RIGHT);
-
-		moveRobot(distance);
-		robot_y+=distance;
-
-		map[robot_x][robot_y].setPosition();
-	}
-
-	public static void moveY_R(int distance) {
-
-		map[robot_x][robot_y].reset();
-
-		rotateTo(Direction.LEFT);
-
-		moveRobot(1);
-		robot_y--;
-
-		map[robot_x][robot_y].setPosition();
-	}
+//	public static void moveX_D(int distance) {
+//		map[robot_x][robot_y].reset();
+//
+//		rotateTo(Direction.DOWN);
+//
+//		moveRobot(distance);
+//		robot_x+=distance;
+//
+//		map[robot_x][robot_y].setPosition();
+//
+//	}
+//
+//	public static void moveX_Up(int distance) {
+//		map[robot_x][robot_y].reset();
+//
+//		rotateTo(Direction.UP);
+//
+//		moveRobot(distance);
+//		robot_x-=distance;
+//		
+//		map[robot_x][robot_y].setPosition();
+//	
+//	}
+//
+//	public static void moveY_Right(int distance) {
+//
+//		map[robot_x][robot_y].reset();
+//
+//		rotateTo(Direction.RIGHT);
+//
+//		moveRobot(distance);
+//		robot_y+=distance;
+//
+//		map[robot_x][robot_y].setPosition();
+//	}
+//
+//	public static void moveY_Left(int distance) {
+//
+//		map[robot_x][robot_y].reset();
+//
+//		rotateTo(Direction.LEFT);
+//
+//		moveRobot(distance);
+//		robot_y-=distance;
+//
+//		map[robot_x][robot_y].setPosition();
+//	}
 
 	public static void moveTo(int fx, int fy) {
 
 		int distance_x = fx-robot_x;
 		int distance_y = fy-robot_y;
 		
-		if (distance_x < 0)
-			moveX_Up(distance_x);
-		else
-			moveX_D(distance_x);
-
-		if (distance_y < 0)
-			moveY_R(distance_y );
-		else
-			moveY_L(distance_y);
-
-		try {
-			Thread.sleep(300);
-			reset();
-		} catch (Exception e) {
-		}
+		
+		robot_x+=distance_x;
+		if(distance_x > 0)
+			// riga giu
+			rotateTo(Direction.DOWN);
+		 else if(distance_x < 0)
+			// riga su
+			rotateTo(Direction.UP);
+		
+		moveRobot( Math.abs(distance_x)) ;
+		
+		
+		robot_y+=distance_y;
+		if(distance_y > 0) 
+			// col destra
+			rotateTo(Direction.RIGHT);
+		else if(distance_y < 0) 
+			// col sinistra
+			rotateTo(Direction.LEFT);
+		
+		moveRobot( Math.abs(distance_y));
 
 	}
 
@@ -125,11 +134,11 @@ public class MainProgram {
 				rotate(currentDir);
 			}
 			break;
-		case REVERSE:
+		case UP:
 
 			switch (currentDir) {
 			case DOWN:
-				rotate(Direction.REVERSE);
+				rotate(Direction.UP);
 				break;
 			case LEFT:
 				rotate(Direction.RIGHT);
@@ -137,7 +146,7 @@ public class MainProgram {
 			case RIGHT:
 				rotate(Direction.LEFT);
 				break;
-			case REVERSE:
+			case UP:
 				break;
 			}
 			break;
@@ -147,9 +156,9 @@ public class MainProgram {
 				rotate(Direction.LEFT);
 				break;
 			case LEFT:
-				rotate(Direction.REVERSE);
+				rotate(Direction.UP);
 				break;
-			case REVERSE:
+			case UP:
 				rotate(Direction.RIGHT);
 				break;
 			case RIGHT:
@@ -163,17 +172,22 @@ public class MainProgram {
 				break;
 			case LEFT:
 				break;
-			case REVERSE:
+			case UP:
 				rotate(Direction.LEFT);
 				break;
 			case RIGHT:
-				rotate(Direction.REVERSE);
+				rotate(Direction.UP);
 				break;
 			}
 			break;
 		}
 
-		center();
+		try {
+			Thread.sleep(1000);
+			center();
+		}catch(InterruptedException e) {
+			
+		}
 	}
 
 	private static void rotate(Direction dir) {
@@ -181,11 +195,9 @@ public class MainProgram {
 		t.start();
 
 		try {
-			Thread.sleep(1000);
 			t.join();
-			Thread.sleep(500);
-
-			center();
+			Thread.sleep(300);
+			
 		} catch (Exception e) {
 
 		}
@@ -196,7 +208,7 @@ public class MainProgram {
 		int r, g, b;
 		Color currentColor = Color.NOT_FOUND;
 
-		while (cells != 0) {
+		while (cells > 0) {
 			Forward forward = new Forward(LEFT_MOTOR, RIGHT_MOTOR);
 			Thread f = new Thread(forward, "forward");
 			f.start();
@@ -223,8 +235,13 @@ public class MainProgram {
 			}
 
 			center();
-
 			cells--;
+		}
+		
+		try {
+			reset();
+		}catch(Exception e) {
+			
 		}
 
 	}
@@ -241,7 +258,7 @@ public class MainProgram {
 
 		return (angle <= range || angle >= 360 - range) ? Direction.DOWN
 				: (angle <= 90 + range && angle >= 90 - range) ? Direction.RIGHT
-						: (angle <= 180 + range && angle >= 180 - range) ? Direction.REVERSE
+						: (angle <= 180 + range && angle >= 180 - range) ? Direction.UP
 								: (angle <= 270 + range && angle >= 270 - range) ? Direction.LEFT : null;
 	}
 
@@ -277,12 +294,71 @@ public class MainProgram {
 	}
 
 	public static void center() {
-		Thread c = new Thread(new Center(LEFT_MOTOR, RIGHT_MOTOR, GYRO_SENSOR));
+	/*	Thread c = new Thread(new Center(LEFT_MOTOR, RIGHT_MOTOR, GYRO_SENSOR));
 		c.start();
 
 		try {
 			c.join();
 		} catch (Exception e) {}
+	*/
+		SampleProvider sp = GYRO_SENSOR.getAngleMode();
+
+		int velocity_rot = 8;
+
+		int range = 2;
+		int rotRange = 25;
+		
+		
+		LEFT_MOTOR.setSpeed(20);
+		RIGHT_MOTOR.setSpeed(20);
+		
+		boolean corretto = false;
+		while(!corretto) {
+
+			float[] sample = new float[sp.sampleSize()];
+			sp.fetchSample(sample, 0);
+			int angle = ((int) sample[0] + 360) % 360;
+	
+			if (angle >= 90 - range - rotRange && angle <= 90 -  range
+			|| angle >= 180 - range - rotRange && angle <= 180 - range
+			|| angle >= 270 - range - rotRange && angle <= 270 - range
+			|| angle >= 360 - range - rotRange && angle <= 360 - range) {
+				
+				// left
+				LEFT_MOTOR.startSynchronization();
+				LEFT_MOTOR.rotate(-velocity_rot, true);
+				RIGHT_MOTOR.rotate(velocity_rot, true);
+				LEFT_MOTOR.endSynchronization();
+	
+			} else if (angle <= 90 +  range + rotRange && angle >= 90 +  range
+					|| angle <= 180 + range + rotRange && angle >= 180 + range
+					|| angle <= 270 + range + rotRange && angle >= 270 + range
+					|| angle <=       range + rotRange && angle >=       range) {
+				
+				// right
+				LEFT_MOTOR.startSynchronization();
+				LEFT_MOTOR.rotate(velocity_rot, true);
+				RIGHT_MOTOR.rotate(-velocity_rot, true);
+				LEFT_MOTOR.endSynchronization();
+	
+			}
+			else {
+				corretto= true;
+			}
+	
+			LEFT_MOTOR.waitComplete();
+			RIGHT_MOTOR.waitComplete();
+	
+			LEFT_MOTOR.startSynchronization();
+			LEFT_MOTOR.stop(true);
+			RIGHT_MOTOR.stop(true);
+			LEFT_MOTOR.endSynchronization();
+			
+			try {
+				Thread.sleep(300);
+			}catch(InterruptedException e) {}
+		}
+
 	}
 
 	/*---- BLUETOOTH FUNCTIONS ----------------------------------*/
@@ -299,55 +375,61 @@ public class MainProgram {
 					try {
 						message = bt.read();
 						g.receivedInput();
-
+						
+							
+						boolean start = false;
+						String[] tokens = message.split("&");
+						for (String t : tokens) {
+							
+							if(t.substring(0,1).equals(" ")) {
+								continue;
+							}
+							
+							if (t.equals(END_STRING)) {
+								//stopSearch();
+								continue;
+							}
+							
+							// robot position
+							if(t.substring(0,1).equals("R")) {
+								robot_x = Integer.parseInt(t.substring(1, 2));
+								robot_y = Integer.parseInt(t.substring(2, 3));
+								map[robot_x][robot_y].setPosition();
+								continue;
+							}
+		
+							
+							int xt = Integer.parseInt(t.substring(0, 1));
+							int yt = Integer.parseInt(t.substring(1, 2));
+							int c = Integer.parseInt(t.substring(2, 3));
+							Color col;
+							
+							switch (c) {
+							case 1:
+								col = Color.YELLOW;
+								break;
+							case 2:
+								col = Color.BLUE;
+								break;
+							case 3:
+								col = Color.GREEN;
+								break;
+							case 4:
+								col = Color.RED;
+								break;
+							default:
+								col = null;
+								break;
+							}
+							map[xt][yt].setColor(col);
+							start=true;
+							
+							
+						}
+						if(start) startSearch();
+						
 					} catch (IOException e) {
 						message = null;
-
-					}
-
-					if (message == null)
-						continue;
-
-					String[] tokens = message.split("&");
-					for (String t : tokens) {
-						if (t.equals(END_STRING)) {
-							// stopSearch();
-							continue;
-						}
-
-						// robot position
-						if(t.substring(0,1).equals("R")) {
-							robot_x = Integer.parseInt(t.substring(1, 2));
-							robot_y = Integer.parseInt(t.substring(2, 3));
-							map[robot_x][robot_y].setPosition();
-							continue;
-						}
-						
-						int xt = Integer.parseInt(t.substring(0, 1));
-						int yt = Integer.parseInt(t.substring(1, 2));
-						int c = Integer.parseInt(t.substring(2, 3));
-						Color col;
-						
-						switch (c) {
-						case 1:
-							col = Color.YELLOW;
-							break;
-						case 2:
-							col = Color.BLUE;
-							break;
-						case 3:
-							col = Color.GREEN;
-							break;
-						case 4:
-							col = Color.RED;
-							break;
-						case 9: // robot initial position
-							map[xt][yt].setPosition();
-						default:
-							col = null;
-							break;
-						}
-						map[xt][yt].setColor(col);
 					}
 				}
 
@@ -429,36 +511,15 @@ public class MainProgram {
 		LEFT_MOTOR.synchronizeWith(new RegulatedMotor[] { RIGHT_MOTOR });
 	}
 
-	/*---- MAIN -------------------------------------------------*/
-
-	public static void main(String[] args) {
-		g = new LegoGraphics();
-
-		g.drawLogo();
-
-		g.drawSetup();
-
-		setup();
-
-		g.setupComplete();
-
-		g.btWait();
-		final BluetoothConnector bt = new BluetoothConnector();
-		g.btConnect();
-
-// 		send battery status periodically
-		sendBatteryInfo(bt);
-
-//		start thread for always listening at input from app
-		readAndParse(bt);
+	public static void startSearch() {
 
 //	 	start searching
 		for (int i = 0; i < ROWS; i++) {
 			for (int j = 0; j < COLS; j++) {
-
 				if (map[i][j].hasColor()) {
 
 					g.movingTo(i, j);
+					
 					moveTo(i, j);
 
 					try {
@@ -477,15 +538,35 @@ public class MainProgram {
 
 		g.ending();
 
-//		end of the search
-		try {
-			bt.send(END_STRING.concat("&"));
-		} catch (IOException e) {
-			// do nothing
-		}
+	}
+	
+	/*---- MAIN -------------------------------------------------*/
+
+	public static void main(String[] args) {
+		g = new LegoGraphics();
+
+		g.drawLogo();
+
+		g.drawSetup();
+
+		setup();
+
+		g.setupComplete();
+
+		g.btWait();
+		bt = new BluetoothConnector();
+		g.btConnect();
+
+// 		send battery status periodically
+		sendBatteryInfo(bt);
+
+//		start thread for always listening at input from app
+		readAndParse(bt);
 
 //		BYE-BYE
 
+		
+		
 	}
 
 }

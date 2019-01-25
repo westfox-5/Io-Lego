@@ -202,7 +202,7 @@ public class Main extends AppCompatActivity {
 
                 //* update UI *//*
                 bar.setVisibility(View.VISIBLE);
-                bar.setProgress(1);
+                bar.setProgress(0);
                 bar.setMax(numberOfCells);
                 infoTxt.setBackground(null);
                 infoTxt.setText(R.string.searching);
