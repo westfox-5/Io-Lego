@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Io Lego</string>
+    <string name="app_name">Io, Lego</string>
     <string name="version">APP VERSION: 0.1</string>
 
     <string name="bt_pairing">Connecting to EV3…</string>
@@ -13,12 +13,17 @@
     <string name="alert_fatal_error_text">There\'s a problem with the bluetooth on your device, close the app and retry</string>
     <string name="alert_reconnect_title">Connect failed</string>
     <string name="alert_reconnect_text">Connection to EV3 unavailable</string>
-    <string name="alert_colorChoose_title">Choose color</string>
+    <string name="alert_reconnect_retry">Retry</string>
+    <string name="alert_color_choose_title">Choose color</string>
     <string name="color_red">Red</string>
     <string name="color_yellow">Yellow</string>
     <string name="color_green">Green</string>
     <string name="color_blue">Blue</string>
 
+    <string name="alert_end_continue">Continue</string>
+    <string name="alert_exit">Exit app</string>
+    <string name="alert_end_title">Search ended!</string>
+    <string name="alert_end_message">The Lego robot has successfully ended the search trough the map!</string>
     <string name="error_send">Error while sending information, retry</string>
     <string name="alert_exit_title">Exit app?</string>
 
@@ -34,4 +39,14 @@
 
     <string name="connect_mac">Connect using MAC (%s)</string>
     <string name="connect_id">Connect using ID (%s)</string>
+
+    <string name="tutorial_1">Use the two buttons to connect to the EV3 Lego MindStorm</string>
+    <string name="tutorial_2">Click on cells to select what to put in there</string>
+    <string name="tutorial_3">Select one choice from this menu</string>
+    <string name="tutorial_4">Press the button and enjoy the game!</string>
+
+    <string name="tutorial_title">Tutorial</string>
+    <string name="tutorial_swipe">Swipe to continue</string>
+    <string name="tutorial_end">Exit tutorial</string>
+
 </resources>

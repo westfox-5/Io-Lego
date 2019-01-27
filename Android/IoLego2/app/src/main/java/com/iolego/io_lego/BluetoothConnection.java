@@ -66,7 +66,7 @@ public class BluetoothConnection extends Service {
 
                 }else {
                     Set<BluetoothDevice> bondedDevices = blueAdapter.getBondedDevices();
-                    BluetoothDevice device = searchDevice(bondedDevices, false); // search for exactly the EV3
+                    BluetoothDevice device = searchDevice(bondedDevices, useMAC); // search for exactly the EV3
                     if (device != null) {
                         ParcelUuid[] uuids = device.getUuids();
 
@@ -113,15 +113,17 @@ public class BluetoothConnection extends Service {
         Log.d(TAG, str);
         Log.d(TAG,str.getBytes(Charset.forName("UTF-8")).length+"");
 
-        while(str.getBytes(Charset.forName("UTF-8")).length < 256){
-           str += " ";
-        }
+/*        while(str.getBytes(Charset.forName("UTF-8")).length < 256){
+            str = str.concat(" ");
+        }*/
+
+        str = String.format("%256s", str);
+
 
         outputStream.write(str.getBytes(Charset.forName("UTF-8")));
         outputStream.write("\0".getBytes());
         outputStream.flush();
     }
-
 
     String read() throws IOException {
         int bytesRead;

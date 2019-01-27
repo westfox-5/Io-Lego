@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context="com.iolego.io_lego.Tutorial.Tutorial">
+
+
+        <FrameLayout
+            android:id="@+id/pager_framelayout"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <android.support.v4.view.ViewPager
+                android:id="@+id/tutorial_pager"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" />
+
+            <com.viewpagerindicator.CirclePageIndicator
+                android:id="@+id/circle_indicator"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:background="@null"
+                android:padding="5dp" />
+        </FrameLayout>
+
+
+
+</android.support.constraint.ConstraintLayout>

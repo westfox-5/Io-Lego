@@ -7,10 +7,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -22,11 +22,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
+import com.iolego.io_lego.Tutorial.Tutorial;
 
-public class SplashScreen extends AppCompatActivity {
+public class Startup extends AppCompatActivity {
     private static final String TAG = "SPLASH_ACTIVITY";
 
+    private SharedPreferences prefs;
+    private Boolean prev_choice;
     private BluetoothConnection bt;
     private Dialog reconnectDialog;
     private TextView btConnTXT;
@@ -70,6 +72,10 @@ public class SplashScreen extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.startup);
 
+
+        prefs = getSharedPreferences("com.iolego.io_lego", MODE_PRIVATE);
+
+
         btConnTXT = findViewById(R.id.connectTXT);
         bar = findViewById(R.id.progressBar);
         connectID = findViewById(R.id.connectID);
@@ -101,6 +107,7 @@ public class SplashScreen extends AppCompatActivity {
 
                         btConnTXT.setVisibility(View.VISIBLE);
                         btConnTXT.setText(getResources().getString(R.string.bt_pairing));
+                        prev_choice = false;
 
                         connect(false);
                     }
@@ -120,6 +127,7 @@ public class SplashScreen extends AppCompatActivity {
 
                         btConnTXT.setText(getResources().getString(R.string.bt_pairing));
                         btConnTXT.setVisibility(View.VISIBLE);
+                        prev_choice = true;
 
                         connect(true);
                     }
@@ -143,7 +151,7 @@ public class SplashScreen extends AppCompatActivity {
         }
         switch (ris) {
 
-            case 0: // connesso
+            case 0: // connected
                 Log.d(TAG, "Connection established");
                 btConnTXT.post(new Runnable() {
                     @Override
@@ -155,11 +163,8 @@ public class SplashScreen extends AppCompatActivity {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        Intent i = new Intent(getApplicationContext(), Main.class);
-                        startActivity(i);
-
-                        SplashScreen.this.finish();
-                        overridePendingTransition(R.anim.slide_left, R.anim.slide_right);
+                        startActivity( new Intent(getApplicationContext(), Main.class) );
+                        finish();
 
                     }
                 }, 1000);
@@ -206,7 +211,7 @@ public class SplashScreen extends AppCompatActivity {
     private AlertDialog createDialog(String title, String message, String retry) {
         AlertDialog.Builder build;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            build = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+            build = new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_NoActionBar);
         } else {
             build = new AlertDialog.Builder(this);
         }
@@ -214,11 +219,13 @@ public class SplashScreen extends AppCompatActivity {
         build.setTitle(title);
         build.setMessage(message);
         if(retry!=null)
-            build.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+            build.setPositiveButton(getString(R.string.alert_reconnect_retry), new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) { dialog.dismiss();}
+            public void onClick(DialogInterface dialog, int which) {
+                connect(prev_choice);
+            }
             });
-        build.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+        build.setNegativeButton(getString(R.string.alert_exit), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 System.exit(0);
@@ -234,8 +241,10 @@ public class SplashScreen extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Intent enabelBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(enabelBT, 0);
+
+        startActivityForResult(
+                new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
+                0);
     }
 
     @Override
@@ -247,6 +256,18 @@ public class SplashScreen extends AppCompatActivity {
             reconnectDialog.show();
         } else {
             Toast.makeText(this, getResources().getString(R.string.bt_error), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (prefs.getBoolean("first-run", true)) {
+
+            Intent tutorial = new Intent(getApplicationContext(), Tutorial.class);
+            startActivity(tutorial);
+
+            prefs.edit().putBoolean("first-run", false).apply();
         }
     }
 

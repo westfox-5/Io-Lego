@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
 
 public class Main extends AppCompatActivity {
@@ -47,7 +48,7 @@ public class Main extends AppCompatActivity {
     private TextView infoTxt;
     private ImageView bluetoothImage, batteryImage;
     private int map[][], x, y, checkedCells, robot_x, robot_y;
-    public Dialog colorChooseDialog;
+    public Dialog colorChooseDialog, terminateDialog;
     private ProgressBar bar;
 
     private boolean
@@ -62,8 +63,10 @@ public class Main extends AppCompatActivity {
             imageHandler,
             btHandler;
 
+    /**
+     * -------- BT reconnection -----------------------------------------
+     */
     int[] BTimageArray = {R.drawable.ic_bluetooth_disabled_black, R.drawable.ic_bluetooth_disabled};
-
     private final Runnable changeBTImage = new Runnable() {
         int i = 0;
 
@@ -73,6 +76,46 @@ public class Main extends AppCompatActivity {
             btHandler.postDelayed(this, 1000);
         }
     };
+
+    private void reconnect() {
+
+        btHandler.removeCallbacks(changeBTImage);
+        btHandler.post(changeBTImage);
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int ris;
+                try {
+                    ris = bt.connect(true);
+                } catch (IOException e) {
+                    ris = -1;
+                    btConnected = false;
+                }
+
+                switch (ris) {
+                    case 0:
+                        Log.d(TAG, "Connection established");
+
+                        btConnected = true;
+                        imageHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                bluetoothImage.setImageDrawable(getDrawable(R.drawable.ic_bluetooth_connected));
+                            }
+                        });
+                        btHandler.removeCallbacks(changeBTImage);
+
+                        read();
+
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }).start();
+    }
 
     private ServiceConnection btService = new ServiceConnection() {
         @Override
@@ -107,6 +150,8 @@ public class Main extends AppCompatActivity {
         colorChooseDialog.setContentView(R.layout.choose_color);
         Objects.requireNonNull(colorChooseDialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
+        terminateDialog = createTerminateDialog();
+
         /* handlers*/
         reconnectHandler = new Handler();
         progressBarHandler = new Handler();
@@ -123,22 +168,16 @@ public class Main extends AppCompatActivity {
         infoTxt.setText(R.string.info_place_color);
         bar.setVisibility(View.INVISIBLE);
 
-        Path.ROWS = ROWS;
-        Path.COLS = COLS;
-
         robot_x = 0;
         robot_y = 0;
         findViewById(
-                getResources().getIdentifier("b" + robot_x + "" + robot_y, "id", getPackageName())
+                getResources().getIdentifier(String.format(Locale.ITALY, "b%d%d", robot_x , robot_y), "id", getPackageName())
         ).setBackgroundColor(ContextCompat.getColor(this, R.color.darker_grey));
         map = new int[ROWS][COLS];
-        Path.matrix = new int[ROWS][COLS];
         for (int i = 0; i < ROWS; i++) {
             map[i] = new int[COLS];
-            Path.matrix[i] = new int[COLS];
             for (int j = 0; j < COLS; j++) {
                 map[i][j] = 0;
-                Path.matrix[i][j] = 3;
             }
         }
 
@@ -158,8 +197,6 @@ public class Main extends AppCompatActivity {
                     } else {
                         Log.e(TAG, "Bluetooth not connected");
                         Toast.makeText(getApplicationContext(), getResources().getString(R.string.bt_failed), Toast.LENGTH_SHORT).show();
-
-                        // read thread already does the reconnect
                     }
                 }
             }
@@ -207,6 +244,9 @@ public class Main extends AppCompatActivity {
                 infoTxt.setBackground(null);
                 infoTxt.setText(R.string.searching);
 
+
+                searching = true;
+
                 btConnected = true;
             }
 
@@ -231,6 +271,9 @@ public class Main extends AppCompatActivity {
             bar.setProgress(0);
             infoTxt.setBackground(ContextCompat.getDrawable(this, R.drawable.info_text));
             infoTxt.setText(R.string.search_interrupted);
+
+            searching = false;
+            terminate();
         } catch (IOException e) {
             Toast.makeText(this, getResources().getText(R.string.error_send), Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Cannot send to EV3!");
@@ -240,42 +283,7 @@ public class Main extends AppCompatActivity {
     }
 
     private void terminate() {
-
-    }
-
-    private boolean previous_paths() {
-
-        for (int i = 0; i < ROWS; i++) {
-            for (int j = 0; j < COLS; j++) {
-                if (Path.matrix[i][j] == 0) {
-                    Path.matrix[i][j] = 2;
-                    if (!Path.isPath()) {
-                        Path.matrix[i][j]=0;
-                        return false;
-                    }
-                    Path.matrix[i][j]=0;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    private int available(int u, int v) {
-        Path.matrix[robot_x][robot_y] = 1;
-        Path.matrix[u][v] = 2;
-        if (Path.isPath()) {
-            Path.matrix[u][v]=0;
-            if (previous_paths()) {
-                return 0;
-            } else {
-                Path.matrix[u][v] = 3;
-                return 1; // no path for other
-            }
-        } else {
-            Path.matrix[u][v] = 3;
-            return 2; // no path for this
-        }
+        terminateDialog.show();
     }
 
     public void chooseColor(View view) {
@@ -287,39 +295,16 @@ public class Main extends AppCompatActivity {
         colorChooseDialog.show();
     }
 
-    private void check_cells(){
-
-       // Path.print();
-        for(int u = 0; u<ROWS; u++){
-            for(int v = 0; v<COLS; v++){
-
-                if(map[u][v]>0){
-                    int ris = available(u, v);
-
-                    if(ris==1 || ris==2) { //no longer a path to this cell
-                        findViewById(
-                                getResources().getIdentifier("b" + u + "" + v, "id", getPackageName())
-                        ).setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
-                        map[u][v] = 0;
-                        Path.matrix[u][v] = 3;
-
-                    }
-                }
-            }
-        }
-    }
-
     public void setColor(View view) {
 
         String id = getResources().getResourceEntryName(view.getId());
 
         //always can place the robot
-        if(id.equals("robot")){
+        if (id.equals("robot")) {
             Log.d(TAG_COLOR, "Robot in " + x + y);
 
             // reset the previous robot cell
             map[robot_x][robot_y] = 0;
-            Path.matrix[robot_x][robot_y] = 3;
             findViewById(
                     getResources().getIdentifier("b" + robot_x + "" + robot_y, "id", getPackageName())
             ).setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
@@ -328,23 +313,18 @@ public class Main extends AppCompatActivity {
             robot_x = x;
             robot_y = y;
             map[x][y] = -1;
-            Path.matrix[x][y] = 1;
             b.setBackgroundColor(ContextCompat.getColor(this, R.color.darker_grey));
 
 
-            check_cells();
-
         } else {
-            int ris = available(x, y);
 
-            if(id.equals("undo")){
+            if (id.equals("undo")) {
                 //cannot remove robot
-                if(map[x][y] != -1) {
+                if (map[x][y] != -1) {
                     b.setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
                     Log.d(TAG_COLOR, "Undo in " + x + y);
                     map[x][y] = 0;
-                    Path.matrix[x][y] = 3;
-                }else {
+                } else {
                     infoTxt.setText(R.string.info_cannot_remove_robot);
                 }
 
@@ -353,55 +333,32 @@ public class Main extends AppCompatActivity {
             }
 
 
-            if(ris==1) { //no path to previous cell
-                infoTxt.setTextColor(ContextCompat.getColor(this, R.color.red));
-                infoTxt.setText(R.string.error_no_prev_path);
+            switch (id) {
+                case "yellow":
+                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
+                    Log.d(TAG_COLOR, "Yellow in " + x + y);
+                    map[x][y] = 1;
+                    break;
 
-                infoTxt.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        infoTxt.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
-                        infoTxt.setText(R.string.info_place_color);
-                    }
-                }, 2000);
-            }else if(ris==2){ //no path to this cell
-                infoTxt.setTextColor(ContextCompat.getColor(this, R.color.red));
-                infoTxt.setText(R.string.error_no_path);
+                case "blue":
+                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.blue));
+                    Log.d(TAG_COLOR, "Blue in " + x + y);
+                    map[x][y] = 2;
+                    break;
 
-                infoTxt.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        infoTxt.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
-                        infoTxt.setText(R.string.info_place_color);
-                    }
-                }, 2000);
-            } else { //can insert a color
-                switch (id) {
-                    case "yellow":
-                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
-                        Log.d(TAG_COLOR, "Yellow in " + x + y);
-                        map[x][y] = 1;
-                        break;
+                case "green":
+                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
+                    Log.d(TAG_COLOR, "Green in " + x + y);
+                    map[x][y] = 3;
+                    break;
 
-                    case "blue":
-                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.blue));
-                        Log.d(TAG_COLOR, "Blue in " + x + y);
-                        map[x][y] = 2;
-                        break;
-
-                    case "green":
-                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
-                        Log.d(TAG_COLOR, "Green in " + x + y);
-                        map[x][y] = 3;
-                        break;
-
-                    case "red":
-                        b.setBackgroundColor(ContextCompat.getColor(this, R.color.red));
-                        Log.d(TAG_COLOR, "Red in " + x + y);
-                        map[x][y] = 4;
-                        break;
-                }
+                case "red":
+                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.red));
+                    Log.d(TAG_COLOR, "Red in " + x + y);
+                    map[x][y] = 4;
+                    break;
             }
+
         }
 
         colorChooseDialog.hide();
@@ -511,44 +468,31 @@ public class Main extends AppCompatActivity {
 
     }
 
-    private void reconnect() {
-
-        btHandler.removeCallbacks(changeBTImage);
-        btHandler.post(changeBTImage);
-
-
-        new Thread(new Runnable() {
+    private AlertDialog createTerminateDialog(){
+        AlertDialog.Builder build;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            build = new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_NoActionBar);
+        } else {
+            build = new AlertDialog.Builder(this);
+        }
+        build.setIcon(getDrawable(R.drawable.logo));
+        build.setCancelable(false);
+        build.setTitle(getString(R.string.alert_end_title));
+        build.setMessage(getString(R.string.alert_end_message));
+        build.setPositiveButton(getString(R.string.alert_end_continue), new DialogInterface.OnClickListener() {
             @Override
-            public void run() {
-                int ris;
-                try {
-                    ris = bt.connect(true);
-                } catch (IOException e) {
-                    ris = -1;
-                    btConnected = false;
-                }
-
-                switch (ris) {
-                    case 0:
-                        Log.d(TAG, "Connection established");
-
-                        btConnected = true;
-                        imageHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                bluetoothImage.setImageDrawable(getDrawable(R.drawable.ic_bluetooth_connected));
-                            }
-                        });
-                        btHandler.removeCallbacks(changeBTImage);
-
-                        read();
-
-                        break;
-                    default:
-                        break;
-                }
+            public void onClick(DialogInterface dialog, int which) {
+                terminateDialog.dismiss();
             }
-        }).start();
+        });
+        build.setNegativeButton(getString(R.string.alert_exit), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                System.exit(0);
+            }
+        });
+
+        return build.create();
     }
 
     @Override
