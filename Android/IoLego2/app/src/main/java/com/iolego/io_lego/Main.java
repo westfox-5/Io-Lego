@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.media.Image;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -46,7 +45,7 @@ public class Main extends AppCompatActivity {
 
     private View chooseColorView;
     private ImageButton b;
-    private Button btnMain;
+    private Button btnMain, btnUndo;
     private TextView infoTxt;
     private ImageView bluetoothImage, batteryImage;
     private int map[][], x, y, checkedCells, robot_x, robot_y;
@@ -119,6 +118,55 @@ public class Main extends AppCompatActivity {
         }).start();
     }
 
+    private void read() {
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        while (true) {
+                            String message;
+                            if (bluetoothBound) {
+                                try {
+                                    message = bt.read();
+
+                                    if (message.charAt(3) == '#') {
+                                        Log.d(TAG, "Received battery info: " + message);
+                                        setBatteryIcon(Float.parseFloat(message.substring(0, 3)));
+
+                                    } else if (message.charAt(3) == '&') {
+                                        if (message.substring(0, 3).equals(END_STRING)) {
+                                            Log.d(TAG, "Search terminated");
+                                            // here the search is terminated
+                                            reset();
+
+                                        } else {
+                                            Log.d(TAG, "Received cell info: " + message);
+                                            setChecked(Integer.parseInt(message.substring(0, 1)),
+                                                    Integer.parseInt(message.substring(1, 2)),
+                                                    Integer.parseInt(message.substring(2, 3)) == 1);
+                                        }
+                                    }
+
+                                    btConnected = true;
+                                } catch (IOException e) {
+                                    Log.e(TAG, "Bluetooth unavailable");
+                                    btConnected = false;
+                                    reconnectHandler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            reconnect();
+                                        }
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+        ).start();
+
+    }
+
     private ServiceConnection btService = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
@@ -149,7 +197,7 @@ public class Main extends AppCompatActivity {
 
         /* choose color creation */
         colorChooseDialog = new Dialog(this);
-        chooseColorView= getLayoutInflater().inflate(R.layout.choose_color, null);
+        chooseColorView = getLayoutInflater().inflate(R.layout.choose_color, null);
         colorChooseDialog.setContentView(chooseColorView);
         Objects.requireNonNull(colorChooseDialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
@@ -167,6 +215,8 @@ public class Main extends AppCompatActivity {
         batteryImage = findViewById(R.id.batteryImg);
         btnMain = findViewById(R.id.startBtn);
         infoTxt = findViewById(R.id.infoTXT);
+        btnUndo = chooseColorView.findViewById(R.id.undo);
+
 
         infoTxt.setText(R.string.info_place_color);
         bar.setVisibility(View.INVISIBLE);
@@ -174,7 +224,7 @@ public class Main extends AppCompatActivity {
         robot_x = 0;
         robot_y = 0;
         ImageButton b = findViewById(
-                getResources().getIdentifier(String.format(Locale.ITALY, "b%d%d", robot_x , robot_y), "id", getPackageName())
+                getResources().getIdentifier(String.format(Locale.ITALY, "b%d%d", robot_x, robot_y), "id", getPackageName())
         );
         b.setImageResource(R.drawable.button_robot);
         map = new int[ROWS][COLS];
@@ -205,6 +255,7 @@ public class Main extends AppCompatActivity {
                 }
             }
         });
+
         bluetoothImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -219,7 +270,7 @@ public class Main extends AppCompatActivity {
         String message = "R".concat(String.valueOf(robot_x))
                 .concat(String.valueOf(robot_y)).concat("&");
 
-        /* change btnMain */
+        /* change btnMain to endSearch */
         btnMain.setText(getResources().getString(R.string.break_search));
         btnMain.setBackgroundColor(getResources().getColor(R.color.red));
 
@@ -248,9 +299,7 @@ public class Main extends AppCompatActivity {
                 infoTxt.setBackground(null);
                 infoTxt.setText(R.string.searching);
 
-
                 searching = true;
-
                 btConnected = true;
             }
 
@@ -258,6 +307,7 @@ public class Main extends AppCompatActivity {
             Toast.makeText(this, getResources().getText(R.string.error_send), Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Cannot send to EV3!");
             btConnected = false;
+            searching = false;
         }
     }
 
@@ -265,8 +315,6 @@ public class Main extends AppCompatActivity {
         /* change btnMain */
         btnMain.setText(getResources().getString(R.string.start_search));
         btnMain.setBackgroundColor(getResources().getColor(R.color.green));
-
-        terminate();
 
         try {
             bt.send("999&");
@@ -278,6 +326,8 @@ public class Main extends AppCompatActivity {
             infoTxt.setText(R.string.search_interrupted);
 
             searching = false;
+            reset();
+
         } catch (IOException e) {
             Toast.makeText(this, getResources().getText(R.string.error_send), Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Cannot send to EV3!");
@@ -286,15 +336,14 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    private void terminate() {
+    private void reset() {
         terminateDialog.show();
 
-
-        for(int i=0;i<ROWS;i++){
-            for(int j=0;j<COLS;j++){
-                String id = "b"+i+""+j;
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                String id = "b" + i + "" + j;
                 ImageButton btn = findViewById(
-                        getResources().getIdentifier(id,"id", getPackageName())
+                        getResources().getIdentifier(id, "id", getPackageName())
                 );
                 btn.setImageResource(R.drawable.button_disabled);
             }
@@ -308,12 +357,10 @@ public class Main extends AppCompatActivity {
         x = id.charAt(1) - '0';
         y = id.charAt(2) - '0';
 
-        Button undo = chooseColorView.findViewById(R.id.undo);
-
-        if(map[x][y]==0){
-            undo.setVisibility(View.INVISIBLE);
-        }else {
-            undo.setVisibility(View.VISIBLE);
+        if (map[x][y] == 0) {
+            btnUndo.setVisibility(View.INVISIBLE);
+        } else {
+            btnUndo.setVisibility(View.VISIBLE);
         }
 
         colorChooseDialog.show();
@@ -454,56 +501,7 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    private void read() {
-        new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        while (true) {
-                            String message;
-                            if (bluetoothBound) {
-                                try {
-                                    message = bt.read();
-
-                                    if (message.charAt(3) == '#') {
-                                        Log.d(TAG, "Received battery info: " + message);
-                                        setBatteryIcon(Float.parseFloat(message.substring(0, 3)));
-
-                                    } else if (message.charAt(3) == '&') {
-                                        if (message.substring(0, 3).equals(END_STRING)) {
-                                            Log.d(TAG, "Search terminated");
-                                            // here the search is terminated
-                                            terminate();
-
-                                        } else {
-                                            Log.d(TAG, "Received cell info: " + message);
-                                            setChecked(Integer.parseInt(message.substring(0, 1)),
-                                                    Integer.parseInt(message.substring(1, 2)),
-                                                    Integer.parseInt(message.substring(2, 3)) == 1);
-                                        }
-                                    }
-
-                                    btConnected = true;
-                                } catch (IOException e) {
-                                    Log.e(TAG, "Bluetooth unavailable");
-                                    btConnected = false;
-                                    reconnectHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            reconnect();
-                                        }
-                                    });
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-        ).start();
-
-    }
-
-    private AlertDialog createTerminateDialog(){
+    private AlertDialog createTerminateDialog() {
         AlertDialog.Builder build;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             build = new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_NoActionBar);
