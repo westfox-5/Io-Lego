@@ -16,7 +16,7 @@ public class Tutorial extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tutorial);
 
-        mPager = (ViewPager) findViewById(R.id.tutorial_pager);
+        mPager = findViewById(R.id.tutorial_pager);
         mPager.setOffscreenPageLimit(3); // Helps to keep fragment alive, otherwise I will have to load again images
         mPagerAdapter = new TutorialPagerAdapter(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);

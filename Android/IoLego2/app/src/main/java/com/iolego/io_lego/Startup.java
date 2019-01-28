@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,7 +26,7 @@ import android.widget.Toast;
 import com.iolego.io_lego.Tutorial.Tutorial;
 
 public class Startup extends AppCompatActivity {
-    private static final String TAG = "SPLASH_ACTIVITY";
+    private static final String TAG = "STARTUP_ACTIVITY";
 
     private SharedPreferences prefs;
     private Boolean prev_choice;
@@ -35,6 +36,7 @@ public class Startup extends AppCompatActivity {
     private ProgressBar bar;
     private Handler barHandler;
     private Button connectMAC, connectID;
+    private Button tutorial;
 
     private Runnable
             hide_bar = new Runnable() {
@@ -58,7 +60,6 @@ public class Startup extends AppCompatActivity {
             BluetoothConnection.BluetoothBinder binder = (BluetoothConnection.BluetoothBinder) iBinder;
 
             bt = binder.getService();
-
         }
 
         @Override
@@ -80,6 +81,7 @@ public class Startup extends AppCompatActivity {
         bar = findViewById(R.id.progressBar);
         connectID = findViewById(R.id.connectID);
         connectMAC = findViewById(R.id.connectMAC);
+        tutorial = findViewById(R.id.help_button);
 
         barHandler = new Handler();
 
@@ -135,6 +137,17 @@ public class Startup extends AppCompatActivity {
             }
         });
 
+
+        tutorial.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent tutorial = new Intent(getApplicationContext(), Tutorial.class);
+                startActivity(tutorial);
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+
+            }
+        });
+
     }
 
     private void connect(boolean useMAC) {
@@ -165,6 +178,8 @@ public class Startup extends AppCompatActivity {
                     public void run() {
                         startActivity( new Intent(getApplicationContext(), Main.class) );
                         finish();
+                        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+
 
                     }
                 }, 1000);

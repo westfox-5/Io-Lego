@@ -18,7 +18,7 @@ import java.nio.charset.Charset;
 import java.util.Set;
 
 public class BluetoothConnection extends Service {
-    private static final String TAG= "BLUETOOTH_ACTIVITY";
+    private static final String TAG= "BLUETOOTH_SERVICE";
     protected static String MAC_ADDRESS = "00:16:53:5E:EB:5E";
     protected static String ID_LEGO = "EV3";
     private final IBinder bluetoothBinder = new BluetoothBinder();

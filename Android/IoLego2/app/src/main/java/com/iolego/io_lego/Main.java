@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.media.Image;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -30,7 +31,7 @@ import java.util.Objects;
 
 public class Main extends AppCompatActivity {
     private static final String
-            TAG = "IO-LEGO_ACTIVITY",
+            TAG = "IO-LEGO",
             TAG_COLOR = "COLOR",
             END_STRING = "999";
 
@@ -43,6 +44,7 @@ public class Main extends AppCompatActivity {
             VOLTAGE_MIDDLE = 6.9f;
 
 
+    private View chooseColorView;
     private ImageButton b;
     private Button btnMain;
     private TextView infoTxt;
@@ -147,7 +149,8 @@ public class Main extends AppCompatActivity {
 
         /* choose color creation */
         colorChooseDialog = new Dialog(this);
-        colorChooseDialog.setContentView(R.layout.choose_color);
+        chooseColorView= getLayoutInflater().inflate(R.layout.choose_color, null);
+        colorChooseDialog.setContentView(chooseColorView);
         Objects.requireNonNull(colorChooseDialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         terminateDialog = createTerminateDialog();
@@ -170,9 +173,10 @@ public class Main extends AppCompatActivity {
 
         robot_x = 0;
         robot_y = 0;
-        findViewById(
+        ImageButton b = findViewById(
                 getResources().getIdentifier(String.format(Locale.ITALY, "b%d%d", robot_x , robot_y), "id", getPackageName())
-        ).setBackgroundColor(ContextCompat.getColor(this, R.color.darker_grey));
+        );
+        b.setImageResource(R.drawable.button_robot);
         map = new int[ROWS][COLS];
         for (int i = 0; i < ROWS; i++) {
             map[i] = new int[COLS];
@@ -262,6 +266,7 @@ public class Main extends AppCompatActivity {
         btnMain.setText(getResources().getString(R.string.start_search));
         btnMain.setBackgroundColor(getResources().getColor(R.color.green));
 
+        terminate();
 
         try {
             bt.send("999&");
@@ -273,7 +278,6 @@ public class Main extends AppCompatActivity {
             infoTxt.setText(R.string.search_interrupted);
 
             searching = false;
-            terminate();
         } catch (IOException e) {
             Toast.makeText(this, getResources().getText(R.string.error_send), Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Cannot send to EV3!");
@@ -284,6 +288,17 @@ public class Main extends AppCompatActivity {
 
     private void terminate() {
         terminateDialog.show();
+
+
+        for(int i=0;i<ROWS;i++){
+            for(int j=0;j<COLS;j++){
+                String id = "b"+i+""+j;
+                ImageButton btn = findViewById(
+                        getResources().getIdentifier(id,"id", getPackageName())
+                );
+                btn.setImageResource(R.drawable.button_disabled);
+            }
+        }
     }
 
     public void chooseColor(View view) {
@@ -292,6 +307,15 @@ public class Main extends AppCompatActivity {
         String id = getResources().getResourceEntryName(view.getId());
         x = id.charAt(1) - '0';
         y = id.charAt(2) - '0';
+
+        Button undo = chooseColorView.findViewById(R.id.undo);
+
+        if(map[x][y]==0){
+            undo.setVisibility(View.INVISIBLE);
+        }else {
+            undo.setVisibility(View.VISIBLE);
+        }
+
         colorChooseDialog.show();
     }
 
@@ -305,15 +329,17 @@ public class Main extends AppCompatActivity {
 
             // reset the previous robot cell
             map[robot_x][robot_y] = 0;
-            findViewById(
+            ImageButton btn = findViewById(
                     getResources().getIdentifier("b" + robot_x + "" + robot_y, "id", getPackageName())
-            ).setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
+            );
+            btn.setImageResource(R.drawable.button_disabled);
+
 
             // update robot position
             robot_x = x;
             robot_y = y;
             map[x][y] = -1;
-            b.setBackgroundColor(ContextCompat.getColor(this, R.color.darker_grey));
+            b.setImageResource(R.drawable.button_robot);
 
 
         } else {
@@ -321,11 +347,20 @@ public class Main extends AppCompatActivity {
             if (id.equals("undo")) {
                 //cannot remove robot
                 if (map[x][y] != -1) {
-                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.light_grey));
+
+                    b.setImageResource(R.drawable.button_disabled);
                     Log.d(TAG_COLOR, "Undo in " + x + y);
                     map[x][y] = 0;
                 } else {
+                    infoTxt.setTextColor(getResources().getColor(R.color.red));
                     infoTxt.setText(R.string.info_cannot_remove_robot);
+                    infoTxt.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            infoTxt.setTextColor(getResources().getColor(R.color.white));
+                            infoTxt.setText(R.string.info_place_color);
+                        }
+                    }, 2000);
                 }
 
                 colorChooseDialog.hide();
@@ -335,25 +370,25 @@ public class Main extends AppCompatActivity {
 
             switch (id) {
                 case "yellow":
-                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
+                    b.setImageResource(R.drawable.button_yellow);
                     Log.d(TAG_COLOR, "Yellow in " + x + y);
                     map[x][y] = 1;
                     break;
 
                 case "blue":
-                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.blue));
+                    b.setImageResource(R.drawable.button_blue);
                     Log.d(TAG_COLOR, "Blue in " + x + y);
                     map[x][y] = 2;
                     break;
 
                 case "green":
-                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
+                    b.setImageResource(R.drawable.button_green);
                     Log.d(TAG_COLOR, "Green in " + x + y);
                     map[x][y] = 3;
                     break;
 
                 case "red":
-                    b.setBackgroundColor(ContextCompat.getColor(this, R.color.red));
+                    b.setImageResource(R.drawable.button_red);
                     Log.d(TAG_COLOR, "Red in " + x + y);
                     map[x][y] = 4;
                     break;
@@ -374,7 +409,7 @@ public class Main extends AppCompatActivity {
         imageHandler.post(new Runnable() {
             @Override
             public void run() {
-                b.setBackground(getDrawable(correct ? R.drawable.ic_check : R.drawable.ic_clear));
+                b.setImageResource(correct ? R.drawable.ic_check : R.drawable.ic_clear);
             }
         });
 

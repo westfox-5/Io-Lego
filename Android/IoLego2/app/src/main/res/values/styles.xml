@@ -31,7 +31,7 @@
         <item name="android:background">@color/black_overlay</item>
     </style>
 
-    <style name="COnnectButtonStyle" parent="Widget.AppCompat.Button">
+    <style name="ConnectButtonStyle" parent="Widget.AppCompat.Button">
         <item name="android:gravity">center_horizontal|center_vertical</item>
         <item name="android:background">@drawable/connect_buttons</item>
         <item name="android:focusable">true</item>
