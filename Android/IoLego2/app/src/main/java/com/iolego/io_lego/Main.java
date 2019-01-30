@@ -337,17 +337,39 @@ public class Main extends AppCompatActivity {
     }
 
     private void reset() {
-        terminateDialog.show();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                terminateDialog.show();
 
-        for (int i = 0; i < ROWS; i++) {
-            for (int j = 0; j < COLS; j++) {
-                String id = "b" + i + "" + j;
-                ImageButton btn = findViewById(
-                        getResources().getIdentifier(id, "id", getPackageName())
+                for (int i = 0; i < ROWS; i++) {
+                    for (int j = 0; j < COLS; j++) {
+                        String id = "b" + i + "" + j;
+                        ImageButton btn = findViewById(
+                                getResources().getIdentifier(id, "id", getPackageName())
+                        );
+                        btn.setImageResource(R.drawable.button_disabled);
+                    }
+                }
+
+                infoTxt.setText(R.string.info_place_color);
+                infoTxt.setBackground(getResources().getDrawable(R.drawable.info_text));
+                bar.setVisibility(View.INVISIBLE);
+                bar.setProgress(0);
+
+                /* change btnMain to endSearch */
+                btnMain.setText(getResources().getString(R.string.start_search));
+                btnMain.setBackgroundColor(getResources().getColor(R.color.green));
+
+                robot_x = 0;
+                robot_y = 0;
+                ImageButton b = findViewById(
+                        getResources().getIdentifier(String.format(Locale.ITALY, "b%d%d", robot_x, robot_y), "id", getPackageName())
                 );
-                btn.setImageResource(R.drawable.button_disabled);
+                b.setImageResource(R.drawable.button_robot);
             }
-        }
+        });
+
     }
 
     public void chooseColor(View view) {
@@ -367,6 +389,9 @@ public class Main extends AppCompatActivity {
     }
 
     public void setColor(View view) {
+
+
+        if(searching) return;
 
         String id = getResources().getResourceEntryName(view.getId());
 
@@ -473,21 +498,21 @@ public class Main extends AppCompatActivity {
             batteryImage.post(new Runnable() {
                 @Override
                 public void run() {
-                    batteryImage.setImageDrawable(getDrawable(R.drawable.ic_battery_unknown));
+                    batteryImage.setImageResource(R.drawable.ic_battery_unknown);
                 }
             });
         } else if (batteryVoltage < VOLTAGE_LOW) {
             batteryImage.post(new Runnable() {
                 @Override
                 public void run() {
-                    batteryImage.setImageDrawable(getDrawable(R.drawable.ic_battery_20));
+                    batteryImage.setImageResource(R.drawable.ic_battery_20);
                 }
             });
         } else if (batteryVoltage < VOLTAGE_MIDDLE) {
             batteryImage.post(new Runnable() {
                 @Override
                 public void run() {
-                    batteryImage.setImageDrawable(getDrawable(R.drawable.ic_battery_50));
+                    batteryImage.setImageResource(R.drawable.ic_battery_50);
 
                 }
             });
@@ -495,7 +520,7 @@ public class Main extends AppCompatActivity {
             batteryImage.post(new Runnable() {
                 @Override
                 public void run() {
-                    batteryImage.setImageDrawable(getDrawable(R.drawable.ic_battery_full));
+                    batteryImage.setImageResource(R.drawable.ic_battery_full);
                 }
             });
         }
@@ -521,6 +546,7 @@ public class Main extends AppCompatActivity {
         build.setNegativeButton(getString(R.string.alert_exit), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                stopSearch();
                 System.exit(0);
             }
         });

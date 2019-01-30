@@ -27,9 +27,9 @@ public class Rotate implements Runnable {
 			rotA = -150;
 			rotB = 150;
 			break;
-		case UP:
-			rotA = 295;
-			rotB = -295;
+		case REVERSE:
+			rotA = 300;
+			rotB = -300;
 			break;
 		default: 
 			rotA=0;

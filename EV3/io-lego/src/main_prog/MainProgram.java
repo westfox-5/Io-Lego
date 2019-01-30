@@ -1,6 +1,7 @@
 package main_prog;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import lejos.hardware.Battery;
 import lejos.hardware.BrickFinder;
@@ -10,6 +11,7 @@ import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.robotics.RegulatedMotor;
 import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
 import motors.*;
 import utils.*;
 
@@ -24,12 +26,12 @@ public class MainProgram {
 	}
 
 	public enum Direction {
-		UP, LEFT, RIGHT, DOWN
+		REVERSE, LEFT, RIGHT, DOWN
 	}
 
 	static boolean set;
 
-	private final static int BATTERY_TIMER = 60, ROWS = 5, COLS = 4;
+	private final static int BATTERY_TIMER = 60, ROWS = 4, COLS = 4;
 	private final static String END_STRING = "999", LEFT_MOTOR_PORT = "A", RIGHT_MOTOR_PORT = "B", COLOR_PORT = "S4",
 			GYRO_PORT = "S3";
 
@@ -38,62 +40,16 @@ public class MainProgram {
 	private static EV3GyroSensor GYRO_SENSOR;
 	private static RegulatedMotor LEFT_MOTOR, RIGHT_MOTOR;
 
-	private static int robot_x, robot_y;
+	private static int robot_x, robot_y, init_x, init_y, cellsToCheck;
 	private static SampleProvider colorProvider;
 	
 	private static BluetoothConnector bt;
-
 	private static LegoGraphics g;
+	
+	private static Thread read_thread;
+	
 
 	/*---- MOVING FUNCTIONS --------------------------------------*/
-
-//	public static void moveX_D(int distance) {
-//		map[robot_x][robot_y].reset();
-//
-//		rotateTo(Direction.DOWN);
-//
-//		moveRobot(distance);
-//		robot_x+=distance;
-//
-//		map[robot_x][robot_y].setPosition();
-//
-//	}
-//
-//	public static void moveX_Up(int distance) {
-//		map[robot_x][robot_y].reset();
-//
-//		rotateTo(Direction.UP);
-//
-//		moveRobot(distance);
-//		robot_x-=distance;
-//		
-//		map[robot_x][robot_y].setPosition();
-//	
-//	}
-//
-//	public static void moveY_Right(int distance) {
-//
-//		map[robot_x][robot_y].reset();
-//
-//		rotateTo(Direction.RIGHT);
-//
-//		moveRobot(distance);
-//		robot_y+=distance;
-//
-//		map[robot_x][robot_y].setPosition();
-//	}
-//
-//	public static void moveY_Left(int distance) {
-//
-//		map[robot_x][robot_y].reset();
-//
-//		rotateTo(Direction.LEFT);
-//
-//		moveRobot(distance);
-//		robot_y-=distance;
-//
-//		map[robot_x][robot_y].setPosition();
-//	}
 
 	public static void moveTo(int fx, int fy) {
 
@@ -107,9 +63,10 @@ public class MainProgram {
 			rotateTo(Direction.DOWN);
 		 else if(distance_x < 0)
 			// riga su
-			rotateTo(Direction.UP);
+			rotateTo(Direction.REVERSE);
 		
-		moveRobot( Math.abs(distance_x)) ;
+		if(distance_x!=0)
+			moveRobot( Math.abs(distance_x) );
 		
 		
 		robot_y+=distance_y;
@@ -120,13 +77,15 @@ public class MainProgram {
 			// col sinistra
 			rotateTo(Direction.LEFT);
 		
-		moveRobot( Math.abs(distance_y));
+		if(distance_y!=0)
+			moveRobot( Math.abs(distance_y) );
 
 	}
 
 	private static void rotateTo(Direction dir) {
 
 		Direction currentDir = getDirection();
+		
 
 		switch (dir) {
 		case DOWN:
@@ -134,11 +93,11 @@ public class MainProgram {
 				rotate(currentDir);
 			}
 			break;
-		case UP:
+		case REVERSE:
 
 			switch (currentDir) {
 			case DOWN:
-				rotate(Direction.UP);
+				rotate(Direction.REVERSE);
 				break;
 			case LEFT:
 				rotate(Direction.RIGHT);
@@ -146,7 +105,7 @@ public class MainProgram {
 			case RIGHT:
 				rotate(Direction.LEFT);
 				break;
-			case UP:
+			case REVERSE:
 				break;
 			}
 			break;
@@ -156,9 +115,9 @@ public class MainProgram {
 				rotate(Direction.LEFT);
 				break;
 			case LEFT:
-				rotate(Direction.UP);
+				rotate(Direction.REVERSE);
 				break;
-			case UP:
+			case REVERSE:
 				rotate(Direction.RIGHT);
 				break;
 			case RIGHT:
@@ -172,11 +131,11 @@ public class MainProgram {
 				break;
 			case LEFT:
 				break;
-			case UP:
+			case REVERSE:
 				rotate(Direction.LEFT);
 				break;
 			case RIGHT:
-				rotate(Direction.UP);
+				rotate(Direction.REVERSE);
 				break;
 			}
 			break;
@@ -249,17 +208,19 @@ public class MainProgram {
 	/*---- UTILS FUNCTIONS --------------------------------------*/
 
 	private static Direction getDirection() {
-		int range = 15;
+		int range = 10;
 
 		SampleProvider sp = GYRO_SENSOR.getAngleMode();
 		float[] sample = new float[sp.sampleSize()];
 		sp.fetchSample(sample, 0);
-		int angle = ((int) sample[0] + 360) % 360;
+		
+		int angle = ( (int) (sample[0]) + 36000 ) % 360;
 
 		return (angle <= range || angle >= 360 - range) ? Direction.DOWN
 				: (angle <= 90 + range && angle >= 90 - range) ? Direction.RIGHT
-						: (angle <= 180 + range && angle >= 180 - range) ? Direction.UP
+						: (angle <= 180 + range && angle >= 180 - range) ? Direction.REVERSE
 								: (angle <= 270 + range && angle >= 270 - range) ? Direction.LEFT : null;
+	
 	}
 
 	public static Color checkColor() {
@@ -276,7 +237,8 @@ public class MainProgram {
 			gg = (int) (colorSample[1] * 10 * 255);
 			b = (int) (colorSample[2] * 10 * 255);
 			currentColor = ColorsRGB.getColor(r, gg, b);
-
+						
+			
 			Thread.sleep(300);
 			// always check the centering
 			center();
@@ -294,19 +256,13 @@ public class MainProgram {
 	}
 
 	public static void center() {
-	/*	Thread c = new Thread(new Center(LEFT_MOTOR, RIGHT_MOTOR, GYRO_SENSOR));
-		c.start();
 
-		try {
-			c.join();
-		} catch (Exception e) {}
-	*/
 		SampleProvider sp = GYRO_SENSOR.getAngleMode();
 
-		int velocity_rot = 8;
+		int velocity_rot = 5;
 
 		int range = 2;
-		int rotRange = 25;
+		int rotRange = 30;
 		
 		
 		LEFT_MOTOR.setSpeed(20);
@@ -365,7 +321,7 @@ public class MainProgram {
 
 	public static void readAndParse(final BluetoothConnector bt) {
 
-		new Thread(new Runnable() {
+		read_thread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 
@@ -380,49 +336,53 @@ public class MainProgram {
 						boolean start = false;
 						String[] tokens = message.split("&");
 						for (String t : tokens) {
-							
+
 							if(t.substring(0,1).equals(" ")) {
 								continue;
 							}
 							
 							if (t.equals(END_STRING)) {
-								//stopSearch();
+								terminatedByApp();
 								continue;
 							}
 							
 							// robot position
-							if(t.substring(0,1).equals("R")) {
-								robot_x = Integer.parseInt(t.substring(1, 2));
-								robot_y = Integer.parseInt(t.substring(2, 3));
-								map[robot_x][robot_y].setPosition();
-								continue;
-							}
+							if(t.substring(0,1).equals("R")) {					
+								
+								init_x = Integer.parseInt(t.substring(1, 2));
+								init_y = Integer.parseInt(t.substring(2, 3));
+								
+								map[init_x][init_y].setPosition();
+							} else {
 		
 							
-							int xt = Integer.parseInt(t.substring(0, 1));
-							int yt = Integer.parseInt(t.substring(1, 2));
-							int c = Integer.parseInt(t.substring(2, 3));
-							Color col;
-							
-							switch (c) {
-							case 1:
-								col = Color.YELLOW;
-								break;
-							case 2:
-								col = Color.BLUE;
-								break;
-							case 3:
-								col = Color.GREEN;
-								break;
-							case 4:
-								col = Color.RED;
-								break;
-							default:
-								col = null;
-								break;
+								int xt = Integer.parseInt(t.substring(0, 1));
+								int yt = Integer.parseInt(t.substring(1, 2));
+								int c = Integer.parseInt(t.substring(2, 3));
+								Color col;
+								
+								switch (c) {
+								case 1:
+									col = Color.YELLOW;
+									break;
+								case 2:
+									col = Color.BLUE;
+									break;
+								case 3:
+									col = Color.GREEN;
+									break;
+								case 4:
+									col = Color.RED;
+									break;
+								default:
+									col = null;
+									break;
+								}
+								map[xt][yt].setColor(col);
+								
+								cellsToCheck++;
+								start=true;
 							}
-							map[xt][yt].setColor(col);
-							start=true;
 							
 							
 						}
@@ -434,7 +394,9 @@ public class MainProgram {
 				}
 
 			}
-		}).start();
+		});
+		
+		read_thread.start();
 	}
 
 	private static void sendBatteryInfo(final BluetoothConnector bt) {
@@ -458,11 +420,18 @@ public class MainProgram {
 	/*---- SETUP ALL --------------------------------------------*/
 
 	public static void setup() {
+		init_x = 0;
+		init_y = 0;
+		robot_x = 0;
+		robot_y = 0;
+		cellsToCheck = 0;
+		
 		map = new Cell[ROWS][COLS];
 		for (int i = 0; i < ROWS; i++) {
 			map[i] = new Cell[COLS];
 			for (int j = 0; j < COLS; j++) {
 				map[i][j] = new Cell(i, j);
+				map[i][j].setVisited(false);
 			}
 		}
 
@@ -511,33 +480,137 @@ public class MainProgram {
 		LEFT_MOTOR.synchronizeWith(new RegulatedMotor[] { RIGHT_MOTOR });
 	}
 
+	
+	public static void moveToInit() {
+		if(init_x!= robot_x && init_y!=robot_y) {
+			g.movingTo(init_x, init_y, robot_x, robot_y);
+			moveTo(init_x, init_y);
+			rotateTo(Direction.DOWN);
+			
+		}
+	}
+	
+	
 	public static void startSearch() {
+		
+		moveToInit();
 
-//	 	start searching
-		for (int i = 0; i < ROWS; i++) {
-			for (int j = 0; j < COLS; j++) {
-				if (map[i][j].hasColor()) {
+		
+		int r = 1;
+		boolean finish = false, found = false;
+		
+		
+		do {
 
-					g.movingTo(i, j);
-					
-					moveTo(i, j);
+			found = false;
+			for(int i = robot_x-r; i <= robot_x+r;i++) {
+				if(found) {
+					break;
+				}
+				if(i<ROWS && i>=0) {
 
-					try {
-						Color color_checked = checkColor();
-						g.displayColor(color_checked);
-						bt.send(new StringBuilder().append(robot_x).append(robot_y)
-								.append(map[i][j].isCorrectColor(color_checked) ? 1 : 0).append('&').toString());
+					for(int j = robot_y-r; j <= robot_y+r; j++) {
+						if(found) {
+							break;
+						}
+						if(j<COLS && j>=0) {
+							
+							if (map[i][j].hasColor() && !map[i][j].isVisited()) {
 
-						g.drawLogo();
-					} catch (IOException e) {
-						// do nothing
+								g.movingTo(i, j, robot_x, robot_y);
+											
+								moveTo(i, j);
+								found = true;
+								cellsToCheck--;
+							
+								try {
+									Color color_checked = checkColor();
+									g.displayColor(color_checked);
+									bt.send(new StringBuilder().append(robot_x).append(robot_y)
+											.append(map[i][j].isCorrectColor(color_checked) ? 1 : 0).append('&').toString());
+									map[i][j].setVisited(true);
+									g.drawLogo();
+								} catch (IOException e) {}
+								
+								
+							
+								
+							}
+	
+						}
 					}
+					
 				}
 			}
-		}
-
+			
+			
+			if(found)
+				r=1;
+			else 
+				r++;
+			
+			
+			if(cellsToCheck == 0) finish = true;
+			
+			
+		}while(!finish);
+		
+		
+		stopSearch();
 		g.ending();
+	
+		
+		
+		
+//	 	start searching
+//		for (int i = 0; i < ROWS; i++) {
+//			for (int j = 0; j < COLS; j++) {
+//				if (map[i][j].hasColor()) {
+//
+//					g.movingTo(i, j, robot_x, robot_y);
+//								
+//					moveTo(i, j);
+//
+//					try {
+//						Color color_checked = checkColor();
+//						g.displayColor(color_checked);
+//						bt.send(new StringBuilder().append(robot_x).append(robot_y)
+//								.append(map[i][j].isCorrectColor(color_checked) ? 1 : 0).append('&').toString());
+//						map[i][j].setVisited(true);
+//						g.drawLogo();
+//					} catch (IOException e) {
+//						// do nothing
+//					}
+//				}
+//			}
+//		}
 
+				
+
+	}
+	
+	private static void stopSearch() {
+		try {
+			bt.send(END_STRING + '&');
+		
+			
+			g.movingTo(0, 0, robot_x, robot_y);
+			moveTo(0,0);
+			rotate(Direction.DOWN);
+			
+			for(int i=0; i<ROWS;i++) {
+				for(int j=0; j<COLS;j++) {
+					map[i][j].setVisited(false);
+					map[i][j].setColor(null);
+
+				}
+			}
+
+		}catch(Exception e) {}
+	}
+
+	private static void terminatedByApp() {
+		read_thread.interrupt();
 	}
 	
 	/*---- MAIN -------------------------------------------------*/
@@ -550,7 +623,7 @@ public class MainProgram {
 		g.drawSetup();
 
 		setup();
-
+				
 		g.setupComplete();
 
 		g.btWait();
@@ -564,7 +637,6 @@ public class MainProgram {
 		readAndParse(bt);
 
 //		BYE-BYE
-
 		
 		
 	}

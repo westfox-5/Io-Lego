@@ -237,7 +237,7 @@ public class Startup extends AppCompatActivity {
             build.setPositiveButton(getString(R.string.alert_reconnect_retry), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                connect(prev_choice);
+                connect(false);
             }
             });
         build.setNegativeButton(getString(R.string.alert_exit), new DialogInterface.OnClickListener() {
