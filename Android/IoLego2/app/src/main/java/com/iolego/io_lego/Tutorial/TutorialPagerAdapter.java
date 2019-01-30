@@ -21,8 +21,6 @@ public class TutorialPagerAdapter extends FragmentStatePagerAdapter {
         super(fm);
     }
 
-
-
     @Override
     public Fragment getItem(int position) {
         return TutorialScreenFragment.newInstance(IMAGE_RES_IDS[position], TITLES_RES_IDS[position], position);

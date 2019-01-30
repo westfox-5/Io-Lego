@@ -13,17 +13,17 @@ import com.bumptech.glide.Glide;
 import com.iolego.io_lego.R;
 
 public class TutorialScreenFragment extends Fragment {
-    private static String IMG_ID = "imgId";
-    private static String TIT_ID = "titId";
-    private static String POS = "pos";
+    private static String 
+        IMG_ID = "imgId", 
+        TIT_ID = "titId",
+        POS = "pos";
 
 
     private ImageView image;
-    private int imageResId, position;
+    private int imageResId, titleResId, position;
 
     private TextView title;
     private Button exitBTN;
-    private int titleResId;
 
 
     public static TutorialScreenFragment newInstance(int imageResId, int titleResId, int position) {
