@@ -31,9 +31,16 @@ public class MainProgram {
 
 	static boolean set;
 
-	private final static int BATTERY_TIMER = 60, ROWS = 4, COLS = 4;
-	private final static String END_STRING = "999", LEFT_MOTOR_PORT = "A", RIGHT_MOTOR_PORT = "B", COLOR_PORT = "S4",
-			GYRO_PORT = "S3";
+	private final static int 
+		BATTERY_TIMER = 60, 
+		ROWS = 4, 
+		COLS = 4;
+	private final static String 
+		END_STRING = 		"999", 
+		LEFT_MOTOR_PORT = 	"A", 
+		RIGHT_MOTOR_PORT = 	"B", 
+		COLOR_PORT = 		"S4",
+		GYRO_PORT = 		"S3";
 
 	private static Cell[][] map;
 	private static EV3ColorSensor COLOR_SENSOR;
@@ -41,7 +48,6 @@ public class MainProgram {
 	private static RegulatedMotor LEFT_MOTOR, RIGHT_MOTOR;
 
 	private static int robot_x, robot_y, init_x, init_y, cellsToCheck;
-	private static SampleProvider colorProvider;
 	
 	private static BluetoothConnector bt;
 	private static LegoGraphics g;
@@ -228,6 +234,8 @@ public class MainProgram {
 		float[] colorSample;
 		int r, gg, b;
 		Color currentColor = Color.NOT_FOUND;
+		SampleProvider colorProvider = COLOR_SENSOR.getRGBMode();
+
 		colorSample = new float[colorProvider.sampleSize()];
 		
 		try {
@@ -237,9 +245,10 @@ public class MainProgram {
 			gg = (int) (colorSample[1] * 10 * 255);
 			b = (int) (colorSample[2] * 10 * 255);
 			currentColor = ColorsRGB.getColor(r, gg, b);
-						
+
+			g.displayColor(currentColor);			
 			
-			Thread.sleep(300);
+			Thread.sleep(500);
 			// always check the centering
 			center();
 
@@ -259,10 +268,9 @@ public class MainProgram {
 
 		SampleProvider sp = GYRO_SENSOR.getAngleMode();
 
-		int velocity_rot = 5;
-
-		int range = 2;
-		int rotRange = 30;
+		int n_rot = 5, 
+			range = 2, 
+			rotRange = 30;
 		
 		
 		LEFT_MOTOR.setSpeed(20);
@@ -282,8 +290,8 @@ public class MainProgram {
 				
 				// left
 				LEFT_MOTOR.startSynchronization();
-				LEFT_MOTOR.rotate(-velocity_rot, true);
-				RIGHT_MOTOR.rotate(velocity_rot, true);
+				LEFT_MOTOR.rotate(-n_rot, true);
+				RIGHT_MOTOR.rotate(n_rot, true);
 				LEFT_MOTOR.endSynchronization();
 	
 			} else if (angle <= 90 +  range + rotRange && angle >= 90 +  range
@@ -293,14 +301,14 @@ public class MainProgram {
 				
 				// right
 				LEFT_MOTOR.startSynchronization();
-				LEFT_MOTOR.rotate(velocity_rot, true);
-				RIGHT_MOTOR.rotate(-velocity_rot, true);
+				LEFT_MOTOR.rotate(n_rot, true);
+				RIGHT_MOTOR.rotate(-n_rot, true);
 				LEFT_MOTOR.endSynchronization();
 	
 			}
-			else {
+			else 
 				corretto= true;
-			}
+			
 	
 			LEFT_MOTOR.waitComplete();
 			RIGHT_MOTOR.waitComplete();
@@ -316,6 +324,94 @@ public class MainProgram {
 		}
 
 	}
+
+	public static void moveToInit() {
+		if(init_x!= robot_x && init_y!=robot_y) {
+			g.movingTo(init_x, init_y);
+			moveTo(init_x, init_y);
+			rotateTo(Direction.DOWN);
+			
+		}
+	}
+
+	public static void startSearch() {
+		
+		moveToInit();
+
+		int r = 1;
+		boolean finish = false, found = false;
+		
+		do {
+
+			found = false;
+			for(int i = robot_x-r; i <= robot_x+r;i++) {
+				if(found) break;
+				
+				if(i<ROWS && i>=0) {
+
+					for(int j = robot_y-r; j <= robot_y+r; j++) {
+						if(found) break;
+						
+						if(j<COLS && j>=0) {
+							if (map[i][j].hasColor() && !map[i][j].isVisited()) {
+
+								g.movingTo(i, j);
+											
+								moveTo(i, j);
+								found = true;
+								cellsToCheck--;
+							
+								try {
+									Color color_checked = checkColor();
+									g.displayColor(color_checked);
+									bt.send(new StringBuilder().append(robot_x).append(robot_y)
+											.append(map[i][j].isCorrectColor(color_checked) ? 1 : 0).append('&').toString());
+									map[i][j].setVisited(true);
+									g.drawLogo();
+								} catch (IOException e) {}
+								
+							}
+	
+						}
+					}
+					
+				}
+			}
+			
+			r = found? 1 : r+1;
+
+			finish = cellsToCheck==0;	
+		}while(!finish);
+	
+		stopSearch();
+		g.ending();		
+
+	}
+	
+	private static void stopSearch() {
+		try {
+			bt.send(END_STRING + '&');
+		
+			
+			g.movingTo(0, 0);
+			moveTo(0,0);
+			rotate(Direction.DOWN);
+			
+			for(int i=0; i<ROWS;i++) {
+				for(int j=0; j<COLS;j++) {
+					map[i][j].setVisited(false);
+					map[i][j].setColor(null);
+
+				}
+			}
+
+		}catch(Exception e) {}
+	}
+
+	private static void terminatedByApp() {
+		read_thread.interrupt();
+	}
+	
 
 	/*---- BLUETOOTH FUNCTIONS ----------------------------------*/
 
@@ -450,7 +546,6 @@ public class MainProgram {
 		do {
 			try {
 				COLOR_SENSOR = new EV3ColorSensor(BrickFinder.getDefault().getPort(COLOR_PORT));
-				colorProvider = COLOR_SENSOR.getRGBMode();
 				set = true;
 			} catch (Exception e) {
 
@@ -480,139 +575,6 @@ public class MainProgram {
 		LEFT_MOTOR.synchronizeWith(new RegulatedMotor[] { RIGHT_MOTOR });
 	}
 
-	
-	public static void moveToInit() {
-		if(init_x!= robot_x && init_y!=robot_y) {
-			g.movingTo(init_x, init_y, robot_x, robot_y);
-			moveTo(init_x, init_y);
-			rotateTo(Direction.DOWN);
-			
-		}
-	}
-	
-	
-	public static void startSearch() {
-		
-		moveToInit();
-
-		
-		int r = 1;
-		boolean finish = false, found = false;
-		
-		
-		do {
-
-			found = false;
-			for(int i = robot_x-r; i <= robot_x+r;i++) {
-				if(found) {
-					break;
-				}
-				if(i<ROWS && i>=0) {
-
-					for(int j = robot_y-r; j <= robot_y+r; j++) {
-						if(found) {
-							break;
-						}
-						if(j<COLS && j>=0) {
-							
-							if (map[i][j].hasColor() && !map[i][j].isVisited()) {
-
-								g.movingTo(i, j, robot_x, robot_y);
-											
-								moveTo(i, j);
-								found = true;
-								cellsToCheck--;
-							
-								try {
-									Color color_checked = checkColor();
-									g.displayColor(color_checked);
-									bt.send(new StringBuilder().append(robot_x).append(robot_y)
-											.append(map[i][j].isCorrectColor(color_checked) ? 1 : 0).append('&').toString());
-									map[i][j].setVisited(true);
-									g.drawLogo();
-								} catch (IOException e) {}
-								
-								
-							
-								
-							}
-	
-						}
-					}
-					
-				}
-			}
-			
-			
-			if(found)
-				r=1;
-			else 
-				r++;
-			
-			
-			if(cellsToCheck == 0) finish = true;
-			
-			
-		}while(!finish);
-		
-		
-		stopSearch();
-		g.ending();
-	
-		
-		
-		
-//	 	start searching
-//		for (int i = 0; i < ROWS; i++) {
-//			for (int j = 0; j < COLS; j++) {
-//				if (map[i][j].hasColor()) {
-//
-//					g.movingTo(i, j, robot_x, robot_y);
-//								
-//					moveTo(i, j);
-//
-//					try {
-//						Color color_checked = checkColor();
-//						g.displayColor(color_checked);
-//						bt.send(new StringBuilder().append(robot_x).append(robot_y)
-//								.append(map[i][j].isCorrectColor(color_checked) ? 1 : 0).append('&').toString());
-//						map[i][j].setVisited(true);
-//						g.drawLogo();
-//					} catch (IOException e) {
-//						// do nothing
-//					}
-//				}
-//			}
-//		}
-
-				
-
-	}
-	
-	private static void stopSearch() {
-		try {
-			bt.send(END_STRING + '&');
-		
-			
-			g.movingTo(0, 0, robot_x, robot_y);
-			moveTo(0,0);
-			rotate(Direction.DOWN);
-			
-			for(int i=0; i<ROWS;i++) {
-				for(int j=0; j<COLS;j++) {
-					map[i][j].setVisited(false);
-					map[i][j].setColor(null);
-
-				}
-			}
-
-		}catch(Exception e) {}
-	}
-
-	private static void terminatedByApp() {
-		read_thread.interrupt();
-	}
-	
 	/*---- MAIN -------------------------------------------------*/
 
 	public static void main(String[] args) {

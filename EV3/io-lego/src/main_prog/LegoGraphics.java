@@ -67,12 +67,11 @@ public class LegoGraphics {
 		g.drawString("Instrunctions",0,55,0);
 	}
 	
-	public void movingTo(int x, int y, int rx, int ry) {
+	public void movingTo(int x, int y) {
 		drawLogo();
 		g.setFont(Font.getDefaultFont());
 		g.drawString("Moving to",0,35,0);
 		g.drawString(" "+x+" "+y,0,55,0);
-		g.drawString(" "+rx+" "+ry,0,70,0);
 	}
 
 	public void displayColor(Color c) {
