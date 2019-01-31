@@ -23,8 +23,8 @@ public class LegoGraphics {
 		g.clear();
 		LCD.clear();
 		g.setFont(Font.getDefaultFont());
-		g.drawString("IO-LEGO", W/2-45, 2, 0);
-		g.drawLine(0, 20, W, 20);
+		g.drawString("IO-LEGO", W/2-45, 15, 0);
+		g.drawLine(0, 30, W, 30);
 	}
 	
 	public void drawSetup() {

@@ -12,7 +12,7 @@ public class ColorsRGB {
 
 		if(r > 300) {
 			if(g > 200) {
-				return Color.YELLOW;
+				return b>100? Color.NOT_FOUND : Color.YELLOW;
 			}
 			else if(g <= 200) {
 				return Color.RED;

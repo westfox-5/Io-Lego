@@ -1,17 +1,14 @@
 package main_prog;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import lejos.hardware.Battery;
 import lejos.hardware.BrickFinder;
-import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.robotics.RegulatedMotor;
 import lejos.robotics.SampleProvider;
-import lejos.utility.Delay;
 import motors.*;
 import utils.*;
 
@@ -172,6 +169,7 @@ public class MainProgram {
 		float[] colorSample;
 		int r, g, b;
 		Color currentColor = Color.NOT_FOUND;
+		SampleProvider colorProvider = COLOR_SENSOR.getRGBMode();
 
 		while (cells > 0) {
 			Forward forward = new Forward(LEFT_MOTOR, RIGHT_MOTOR);
@@ -268,13 +266,13 @@ public class MainProgram {
 
 		SampleProvider sp = GYRO_SENSOR.getAngleMode();
 
-		int n_rot = 5, 
+		int n_rot = 3, 
 			range = 2, 
 			rotRange = 30;
 		
 		
-		LEFT_MOTOR.setSpeed(20);
-		RIGHT_MOTOR.setSpeed(20);
+		LEFT_MOTOR.setSpeed(15);
+		RIGHT_MOTOR.setSpeed(15);
 		
 		boolean corretto = false;
 		while(!corretto) {
@@ -326,11 +324,10 @@ public class MainProgram {
 	}
 
 	public static void moveToInit() {
-		if(init_x!= robot_x && init_y!=robot_y) {
+		if(init_x!= robot_x || init_y!=robot_y) {
 			g.movingTo(init_x, init_y);
 			moveTo(init_x, init_y);
 			rotateTo(Direction.DOWN);
-			
 		}
 	}
 
@@ -367,6 +364,7 @@ public class MainProgram {
 									bt.send(new StringBuilder().append(robot_x).append(robot_y)
 											.append(map[i][j].isCorrectColor(color_checked) ? 1 : 0).append('&').toString());
 									map[i][j].setVisited(true);
+									map[i][j].setColor(null);
 									g.drawLogo();
 								} catch (IOException e) {}
 								
@@ -389,22 +387,24 @@ public class MainProgram {
 	}
 	
 	private static void stopSearch() {
-		try {
-			bt.send(END_STRING + '&');
-		
-			
+		try {			
 			g.movingTo(0, 0);
-			moveTo(0,0);
-			rotate(Direction.DOWN);
+			moveTo(0,0);			
+			rotateTo(Direction.DOWN);
 			
-			for(int i=0; i<ROWS;i++) {
-				for(int j=0; j<COLS;j++) {
-					map[i][j].setVisited(false);
-					map[i][j].setColor(null);
-
+				for (int i = 0; i < ROWS; i++) {
+					for (int j = 0; j < COLS; j++) {
+						map[i][j] = new Cell(i, j);
+					}
 				}
-			}
+			
+			read_thread.interrupt();
+			
+			bt.send(END_STRING + '&');
 
+
+			readAndParse();
+			
 		}catch(Exception e) {}
 	}
 
@@ -415,7 +415,7 @@ public class MainProgram {
 
 	/*---- BLUETOOTH FUNCTIONS ----------------------------------*/
 
-	public static void readAndParse(final BluetoothConnector bt) {
+	public static void readAndParse() {
 
 		read_thread = new Thread(new Runnable() {
 			@Override
@@ -423,70 +423,79 @@ public class MainProgram {
 
 				while (true) {
 
-					String message;
-					try {
-						message = bt.read();
-						g.receivedInput();
-						
-							
-						boolean start = false;
-						String[] tokens = message.split("&");
-						for (String t : tokens) {
+					String message = new String();
+					boolean start = false;
 
-							if(t.substring(0,1).equals(" ")) {
-								continue;
-							}
+				
+						try {
+							message = bt.read();
+							g.receivedInput();
 							
-							if (t.equals(END_STRING)) {
-								terminatedByApp();
-								continue;
-							}
-							
-							// robot position
-							if(t.substring(0,1).equals("R")) {					
 								
-								init_x = Integer.parseInt(t.substring(1, 2));
-								init_y = Integer.parseInt(t.substring(2, 3));
-								
-								map[init_x][init_y].setPosition();
-							} else {
-		
-							
-								int xt = Integer.parseInt(t.substring(0, 1));
-								int yt = Integer.parseInt(t.substring(1, 2));
-								int c = Integer.parseInt(t.substring(2, 3));
-								Color col;
-								
-								switch (c) {
-								case 1:
-									col = Color.YELLOW;
-									break;
-								case 2:
-									col = Color.BLUE;
-									break;
-								case 3:
-									col = Color.GREEN;
-									break;
-								case 4:
-									col = Color.RED;
-									break;
-								default:
-									col = null;
-									break;
+							String[] tokens = message.split("&");
+							for (String t : tokens) {
+	
+								if(t.substring(0,1).equals(" ")) {
+									
 								}
-								map[xt][yt].setColor(col);
+								else 
 								
-								cellsToCheck++;
-								start=true;
+								if (t.equals(END_STRING)) {
+									terminatedByApp();
+								} 
+								else
+								
+								// robot position
+								if(t.substring(0,1).equals("R")) {					
+									
+									init_x = Integer.parseInt(t.substring(1, 2));
+									init_y = Integer.parseInt(t.substring(2, 3));
+									
+									map[init_x][init_y].setPosition();
+								} else {
+			
+									if(!t.substring(0,1).equals(" ") && !t.substring(1,2).equals(" ")) {
+									
+										int xt = Integer.parseInt(t.substring(0, 1));
+										int yt = Integer.parseInt(t.substring(1, 2));
+										
+										int c = Integer.parseInt(t.substring(2, 3));
+										Color col;
+										
+										switch (c) {
+										case 1:
+											col = Color.YELLOW;
+											break;
+										case 2:
+											col = Color.BLUE;
+											break;
+										case 3:
+											col = Color.GREEN;
+											break;
+										case 4:
+											col = Color.RED;
+											break;
+										default:
+											col = null;
+											break;
+										}
+										map[xt][yt].setColor(col);
+										
+										cellsToCheck++;
+										start=true;
+									}
+								} 
+								
+								
 							}
 							
-							
-						}
-						if(start) startSearch();
+						} catch (Exception e) { }
 						
-					} catch (IOException e) {
-						message = null;
-					}
+	
+						if(start) {
+							message = new String();
+							startSearch();
+						}
 				}
 
 			}
@@ -495,7 +504,7 @@ public class MainProgram {
 		read_thread.start();
 	}
 
-	private static void sendBatteryInfo(final BluetoothConnector bt) {
+	private static void sendBatteryInfo() {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -593,10 +602,10 @@ public class MainProgram {
 		g.btConnect();
 
 // 		send battery status periodically
-		sendBatteryInfo(bt);
+		sendBatteryInfo();
 
 //		start thread for always listening at input from app
-		readAndParse(bt);
+		readAndParse();
 
 //		BYE-BYE
 		

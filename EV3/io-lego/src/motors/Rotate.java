@@ -20,16 +20,16 @@ public class Rotate implements Runnable {
 		int rotA, rotB;
 		switch(dir) {
 		case RIGHT:
-			rotA = 150;
-			rotB = -150;
+			rotA = 160;
+			rotB = -160;
 			break;
 		case LEFT:
-			rotA = -150;
-			rotB = 150;
+			rotA = -160;
+			rotB = 160;
 			break;
 		case REVERSE:
-			rotA = 300;
-			rotB = -300;
+			rotA = 320;
+			rotB = -320;
 			break;
 		default: 
 			rotA=0;

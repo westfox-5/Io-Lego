@@ -345,11 +345,15 @@ public class Main extends AppCompatActivity {
 
                 for (int i = 0; i < ROWS; i++) {
                     for (int j = 0; j < COLS; j++) {
+
+                        map[i][j] = 0;
                         String id = "b" + i + "" + j;
                         ImageButton btn = findViewById(
                                 getResources().getIdentifier(id, "id", getPackageName())
                         );
                         btn.setImageResource(R.drawable.button_disabled);
+                        btn.setBackground(getDrawable(android.R.color.transparent));
+
                     }
                 }
 
@@ -364,6 +368,8 @@ public class Main extends AppCompatActivity {
 
                 robot_x = 0;
                 robot_y = 0;
+                map[robot_x][robot_y] = -1;
+
                 ImageButton b = findViewById(
                         getResources().getIdentifier(String.format(Locale.ITALY, "b%d%d", robot_x, robot_y), "id", getPackageName())
                 );
@@ -482,7 +488,8 @@ public class Main extends AppCompatActivity {
         imageHandler.post(new Runnable() {
             @Override
             public void run() {
-                b.setImageResource(correct ? R.drawable.ic_check : R.drawable.ic_clear);
+                b.setImageResource(R.drawable.button_disabled);
+                b.setBackground(getDrawable(correct ? R.drawable.ic_check : R.drawable.ic_clear));
             }
         });
 

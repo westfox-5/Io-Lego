@@ -15,8 +15,8 @@ public class Reset extends Thread{
 			B.setSpeed(60);
 		
 			A.startSynchronization();
-			A.rotate(-120,true);
-			B.rotate(-120,true);				
+			A.rotate(-130,true);
+			B.rotate(-130,true);				
 			A.endSynchronization();
 
 			A.waitComplete();
